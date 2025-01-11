@@ -28,6 +28,10 @@ import FamilyForm from './pages/FamilyForm';
 import FamilyMembers from './pages/FamilyMembers';
 import { EventForm } from './pages/Events/EventForm';
 import CommunicationSettings from './pages/settings/CommunicationSettings';
+import Communications from './pages/communications/Communications';
+import CommunicationForm from './pages/communications/CommunicationForm';
+import Templates from './pages/communications/Templates';
+import TemplateForm from './pages/communications/TemplateForm';
 
 // Componente para proteger rotas
 const PrivateRoute: FC<{ element: React.ReactElement }> = ({ element }) => {
@@ -74,6 +78,16 @@ const App: FC = () => {
             <Route path="/settings/communication" element={<PrivateRoute element={<CommunicationSettings />} />} />
             <Route path="/profile" element={<PrivateRoute element={<Profile />} />} />
             <Route path="/admin/communities" element={<PrivateRoute element={<Communities />} />} />
+
+            {/* Rotas de Comunicação */}
+            <Route path="/communications" element={<PrivateRoute element={<Communications />} />} />
+            <Route path="/communications/new" element={<PrivateRoute element={<CommunicationForm />} />} />
+            <Route path="/communications/:communicationId/edit" element={<PrivateRoute element={<CommunicationForm />} />} />
+
+            {/* Rotas de Templates */}
+            <Route path="/communications/templates" element={<PrivateRoute element={<Templates />} />} />
+            <Route path="/communications/templates/new" element={<PrivateRoute element={<TemplateForm />} />} />
+            <Route path="/communications/templates/:templateId/edit" element={<PrivateRoute element={<TemplateForm />} />} />
           </Routes>
         </Router>
       </CommunityProvider>

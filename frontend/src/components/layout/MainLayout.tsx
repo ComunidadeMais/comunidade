@@ -27,6 +27,8 @@ import {
   People as FamilyIcon,
   ExpandLess as ExpandLessIcon,
   ExpandMore as ExpandMoreIcon,
+  Event as EventIcon,
+  Email as EmailIcon,
 } from '@mui/icons-material';
 import Navbar from './Navbar';
 
@@ -97,6 +99,25 @@ const menuItems: MenuItem[] = [
         text: 'Calendário',
         path: '/events/calendar',
         description: 'Visualizar eventos no calendário'
+      }
+    ]
+  },
+  {
+    text: 'Comunicações',
+    path: '/communications',
+    icon: <EmailIcon />,
+    description: 'Gerenciar comunicações',
+    section: 'Gestão',
+    subItems: [
+      {
+        text: 'Lista',
+        path: '/communications',
+        description: 'Visualizar lista de comunicações'
+      },
+      {
+        text: 'Templates',
+        path: '/communications/templates',
+        description: 'Visualizar e gerenciar templates de comunicações'
       }
     ]
   },
