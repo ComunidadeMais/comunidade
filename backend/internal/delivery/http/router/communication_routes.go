@@ -21,5 +21,6 @@ func InitCommunicationRoutes(router *gin.RouterGroup, h RouteHandler) {
 		communications.GET("/settings", h.GetCommunicationSettings)
 		communications.POST("/settings", h.CreateCommunicationSettings)
 		communications.PUT("/settings", h.UpdateCommunicationSettings)
+		communications.POST("/test-email", h.TestEmail)
 	}
 }

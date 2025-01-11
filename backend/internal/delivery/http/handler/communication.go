@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/comunidade/backend/internal/domain"
+	"github.com/comunidade/backend/internal/email"
 	"github.com/comunidade/backend/internal/repository"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -734,5 +735,69 @@ func (h *Handler) CreateCommunicationSettings(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{
 		"message":  "Configurações criadas com sucesso",
 		"settings": settings,
+	})
+}
+
+func (h *Handler) TestEmail(c *gin.Context) {
+	user, exists := c.Get("user")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Token inválido"})
+		return
+	}
+
+	communityID := c.Param("communityId")
+
+	community, err := h.repos.Community.FindByID(context.Background(), communityID)
+	if err != nil {
+		h.logger.Error("erro ao buscar comunidade", zap.Error(err))
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro interno do servidor"})
+		return
+	}
+	if community == nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Comunidade não encontrada"})
+		return
+	}
+
+	if community.CreatedBy != user.(*domain.User).ID {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Você não tem permissão para testar configurações"})
+		return
+	}
+
+	// Busca as configurações de e-mail
+	settings, err := h.services.Communication.GetCommunicationSettings(context.Background(), communityID)
+	if err != nil {
+		h.logger.Error("erro ao buscar configurações", zap.Error(err))
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao buscar configurações de e-mail"})
+		return
+	}
+	if settings == nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Configurações de e-mail não encontradas"})
+		return
+	}
+
+	if !settings.EmailEnabled {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "E-mail não está habilitado nas configurações"})
+		return
+	}
+
+	// Cria um cliente de e-mail com as configurações
+	mailer := email.NewMailer(&email.Config{
+		Host:     settings.EmailSMTPHost,
+		Port:     settings.EmailSMTPPort,
+		Username: settings.EmailUsername,
+		Password: settings.EmailPassword,
+		From:     settings.EmailFromAddress,
+	})
+
+	// Envia um e-mail de teste
+	err = mailer.SendTestEmail(settings.EmailFromAddress, settings.EmailFromName)
+	if err != nil {
+		h.logger.Error("erro ao enviar e-mail de teste", zap.Error(err))
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Erro ao enviar e-mail de teste: %v", err)})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "E-mail de teste enviado com sucesso",
 	})
 }

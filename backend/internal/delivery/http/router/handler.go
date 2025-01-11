@@ -81,4 +81,5 @@ type RouteHandler interface {
 	GetCommunicationSettings(c *gin.Context)
 	CreateCommunicationSettings(c *gin.Context)
 	UpdateCommunicationSettings(c *gin.Context)
+	TestEmail(c *gin.Context)
 }
