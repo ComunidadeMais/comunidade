@@ -27,6 +27,7 @@ import FamilyList from './pages/FamilyList';
 import FamilyForm from './pages/FamilyForm';
 import FamilyMembers from './pages/FamilyMembers';
 import { EventForm } from './pages/Events/EventForm';
+import CommunicationSettings from './pages/settings/CommunicationSettings';
 
 // Componente para proteger rotas
 const PrivateRoute: FC<{ element: React.ReactElement }> = ({ element }) => {
@@ -70,6 +71,7 @@ const App: FC = () => {
             <Route path="/events/new" element={<PrivateRoute element={<EventForm />} />} />
             <Route path="/events/:eventId/edit" element={<PrivateRoute element={<EventForm />} />} />
             <Route path="/settings" element={<PrivateRoute element={<Settings />} />} />
+            <Route path="/settings/communication" element={<PrivateRoute element={<CommunicationSettings />} />} />
             <Route path="/profile" element={<PrivateRoute element={<Profile />} />} />
             <Route path="/admin/communities" element={<PrivateRoute element={<Communities />} />} />
           </Routes>
