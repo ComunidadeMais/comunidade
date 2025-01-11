@@ -1,0 +1,66 @@
+package router
+
+import "github.com/gin-gonic/gin"
+
+// RouteHandler define os métodos necessários para as rotas
+type RouteHandler interface {
+	// Auth
+	Register(c *gin.Context)
+	Login(c *gin.Context)
+	RefreshToken(c *gin.Context)
+	ForgotPassword(c *gin.Context)
+	ResetPassword(c *gin.Context)
+
+	// User
+	GetProfile(c *gin.Context)
+	UpdateProfile(c *gin.Context)
+	UpdatePassword(c *gin.Context)
+	UpdateAvatar(c *gin.Context)
+
+	// Community
+	CreateCommunity(c *gin.Context)
+	ListCommunities(c *gin.Context)
+	GetCommunity(c *gin.Context)
+	UpdateCommunity(c *gin.Context)
+	DeleteCommunity(c *gin.Context)
+	UploadCommunityLogo(c *gin.Context)
+	UploadCommunityBanner(c *gin.Context)
+
+	// Member
+	AddMember(c *gin.Context)
+	ListMembers(c *gin.Context)
+	GetMember(c *gin.Context)
+	UpdateMember(c *gin.Context)
+	RemoveMember(c *gin.Context)
+	UploadMemberPhoto(c *gin.Context)
+	GetMemberFamily(c *gin.Context)
+
+	// Family
+	ListFamilies(c *gin.Context)
+	GetFamily(c *gin.Context)
+	AddFamily(c *gin.Context)
+	UpdateFamily(c *gin.Context)
+	DeleteFamily(c *gin.Context)
+	AddFamilyMember(c *gin.Context)
+	RemoveFamilyMember(c *gin.Context)
+	UpdateFamilyMemberRole(c *gin.Context)
+
+	// Group
+	CreateGroup(c *gin.Context)
+	ListGroups(c *gin.Context)
+	GetGroup(c *gin.Context)
+	UpdateGroup(c *gin.Context)
+	DeleteGroup(c *gin.Context)
+	AddGroupMember(c *gin.Context)
+	RemoveGroupMember(c *gin.Context)
+	ListGroupMembers(c *gin.Context)
+
+	// Event
+	CreateEvent(c *gin.Context)
+	ListEvents(c *gin.Context)
+	GetEvent(c *gin.Context)
+	UpdateEvent(c *gin.Context)
+	DeleteEvent(c *gin.Context)
+	RegisterAttendance(c *gin.Context)
+	UpdateAttendance(c *gin.Context)
+}

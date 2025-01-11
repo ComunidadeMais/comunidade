@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Verificação de Email - Comunidade+</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .content {
+            background-color: #f9f9f9;
+            padding: 20px;
+            border-radius: 5px;
+        }
+        .button {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #28a745;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            font-size: 12px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Verificação de Email</h1>
+    </div>
+    <div class="content">
+        <p>Olá {{.Name}},</p>
+        <p>Obrigado por se cadastrar no Comunidade+! Para completar seu cadastro, precisamos verificar seu endereço de email.</p>
+        <p>Por favor, clique no botão abaixo para verificar seu email:</p>
+        <p style="text-align: center;">
+            <a href="{{.URL}}" class="button">Verificar Email</a>
+        </p>
+        <p>Se você não se cadastrou no Comunidade+, por favor ignore este email.</p>
+        <p>Este link expirará em 24 horas por motivos de segurança.</p>
+        <p>Se você tiver problemas com o botão acima, copie e cole o seguinte link no seu navegador:</p>
+        <p>{{.URL}}</p>
+        <p>Atenciosamente,<br>Equipe Comunidade+</p>
+    </div>
+    <div class="footer">
+        <p>Este é um email automático, por favor não responda.</p>
+    </div>
+</body>
+</html> 
