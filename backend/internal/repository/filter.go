@@ -1,7 +1,11 @@
 package repository
 
 import (
+	"strconv"
+
 	"gorm.io/gorm"
+
+	"github.com/gin-gonic/gin"
 )
 
 type Filter struct {
@@ -75,4 +79,16 @@ func ApplyFilter(query *gorm.DB, filter *Filter) *gorm.DB {
 	query = query.Offset(offset).Limit(filter.PerPage)
 
 	return query
+}
+
+func NewFilterFromQuery(c *gin.Context) *Filter {
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
+	search := c.Query("search")
+
+	return &Filter{
+		Page:    page,
+		PerPage: limit,
+		Search:  search,
+	}
 }

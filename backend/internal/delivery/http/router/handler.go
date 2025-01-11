@@ -63,4 +63,22 @@ type RouteHandler interface {
 	DeleteEvent(c *gin.Context)
 	RegisterAttendance(c *gin.Context)
 	UpdateAttendance(c *gin.Context)
+
+	// Communication methods
+	CreateCommunication(c *gin.Context)
+	GetCommunication(c *gin.Context)
+	ListCommunications(c *gin.Context)
+	UpdateCommunication(c *gin.Context)
+	DeleteCommunication(c *gin.Context)
+	SendCommunication(c *gin.Context)
+
+	CreateTemplate(c *gin.Context)
+	GetTemplate(c *gin.Context)
+	ListTemplates(c *gin.Context)
+	UpdateTemplate(c *gin.Context)
+	DeleteTemplate(c *gin.Context)
+
+	GetCommunicationSettings(c *gin.Context)
+	CreateCommunicationSettings(c *gin.Context)
+	UpdateCommunicationSettings(c *gin.Context)
 }

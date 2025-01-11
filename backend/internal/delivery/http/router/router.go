@@ -23,5 +23,6 @@ func InitRoutes(r *gin.Engine, h RouteHandler, authMiddleware gin.HandlerFunc) {
 		InitFamilyRoutes(protected, h)
 		InitGroupRoutes(protected, h)
 		InitEventRoutes(protected, h)
+		InitCommunicationRoutes(protected, h)
 	}
 }

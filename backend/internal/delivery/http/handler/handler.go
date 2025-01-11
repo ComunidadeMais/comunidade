@@ -16,12 +16,14 @@ type Handler struct {
 }
 
 type Services struct {
-	Upload *service.UploadService
+	Upload        *service.UploadService
+	Communication service.CommunicationService
 }
 
 func NewHandler(r *gin.Engine, repos *repository.Repositories, logger *zap.Logger) {
 	services := &Services{
-		Upload: service.NewUploadService("./uploads"),
+		Upload:        service.NewUploadService("./uploads"),
+		Communication: service.NewCommunicationService(repos, logger),
 	}
 
 	h := &Handler{

@@ -17,5 +17,6 @@ func InitCommunityRoutes(router *gin.RouterGroup, h RouteHandler) {
 		InitFamilyRoutes(communities, h)
 		InitGroupRoutes(communities, h)
 		InitEventRoutes(communities, h)
+		InitCommunicationRoutes(communities, h)
 	}
 }

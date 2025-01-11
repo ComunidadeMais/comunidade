@@ -19,6 +19,10 @@ func RunMigrations(db *gorm.DB, logger *zap.Logger) error {
 		&domain.Attendance{},
 		&domain.Family{},
 		&domain.FamilyMember{},
+		&domain.Communication{},
+		&domain.CommunicationRecipient{},
+		&domain.CommunicationTemplate{},
+		&domain.CommunicationSettings{},
 	}
 
 	// Executa as migrações
