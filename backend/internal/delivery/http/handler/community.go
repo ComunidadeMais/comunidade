@@ -98,6 +98,14 @@ func (h *Handler) CreateCommunity(c *gin.Context) {
 }
 
 func (h *Handler) ListCommunities(c *gin.Context) {
+	// Obtém o usuário do contexto
+	user, exists := c.Get("user")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Token inválido"})
+		return
+	}
+	currentUser := user.(*domain.User)
+
 	// Obtém os parâmetros de paginação
 	page := 1
 	limit := 10
@@ -114,11 +122,13 @@ func (h *Handler) ListCommunities(c *gin.Context) {
 		}
 	}
 
-	// Lista as comunidades
+	// Lista apenas as comunidades criadas pelo usuário
 	filter := &repository.Filter{
 		Page:    page,
 		PerPage: limit,
 	}
+	filter.AddCondition("created_by = ?", currentUser.ID)
+
 	communities, total, err := h.repos.Community.List(context.Background(), filter)
 	if err != nil {
 		h.logger.Error("erro ao listar comunidades", zap.Error(err))

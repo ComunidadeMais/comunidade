@@ -68,11 +68,16 @@ func (r *communityRepository) List(ctx context.Context, filter *Filter) ([]*doma
 
 	query := r.GetDB().WithContext(ctx).Model(&domain.Community{})
 
+	// Aplica os filtros antes de contar
+	query = ApplyFilter(query.Session(&gorm.Session{}), filter)
+
+	// Conta apenas os registros filtrados
 	if err := query.Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
 
-	if err := ApplyFilter(query, filter).Find(&communities).Error; err != nil {
+	// Aplica os filtros novamente para buscar os registros
+	if err := ApplyFilter(query.Session(&gorm.Session{}), filter).Find(&communities).Error; err != nil {
 		return nil, 0, err
 	}
 
