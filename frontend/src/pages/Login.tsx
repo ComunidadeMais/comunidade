@@ -1,4 +1,4 @@
-import { FC, useState } from 'react';
+import { FC, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Container,
@@ -20,15 +20,25 @@ import {
   VisibilityOff as VisibilityOffIcon
 } from '@mui/icons-material';
 import { AuthService } from '../services/auth';
+import { useCommunity } from '../contexts/CommunityContext';
 
 const Login: FC = () => {
   const navigate = useNavigate();
   const theme = useTheme();
+  const { loadCommunities } = useCommunity();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  // Verifica se já existe um token válido
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,19 +47,13 @@ const Login: FC = () => {
 
     try {
       const response = await AuthService.login({ email, password });
-      console.log('Login bem sucedido:', {
-        token: response.token,
-        user: response.user
-      });
       
-      const storedToken = localStorage.getItem('token');
-      console.log('Token armazenado:', storedToken);
+      // Armazena o token
+      localStorage.setItem('token', response.token);
       
-      if (!storedToken) {
-        throw new Error('Token não foi armazenado corretamente');
-      }
-
-      navigate('/dashboard');
+      // Carrega as comunidades e redireciona
+      await loadCommunities();
+      navigate('/dashboard', { replace: true });
     } catch (err: any) {
       console.error('Erro no login:', err);
       setError(err.response?.data?.message || 'Email ou senha inválidos');

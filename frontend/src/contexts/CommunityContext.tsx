@@ -20,6 +20,9 @@ export const CommunityProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [error, setError] = useState<string | null>(null);
 
   const loadCommunities = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
     setLoading(true);
     setError(null);
     try {
@@ -42,11 +45,6 @@ export const CommunityProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       setLoading(false);
     }
   };
-
-  // Carrega as comunidades ao montar o componente
-  useEffect(() => {
-    loadCommunities();
-  }, []);
 
   // Salva a comunidade ativa no localStorage
   useEffect(() => {
