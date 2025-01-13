@@ -15,18 +15,18 @@ import (
 )
 
 type CreateCommunicationRequest struct {
-	Type          string `json:"type" binding:"required,oneof=EMAIL SMS WHATSAPP"`
+	Type          string `json:"type" binding:"required,oneof=email sms whatsapp"`
 	Subject       string `json:"subject" binding:"required"`
 	Content       string `json:"content" binding:"required"`
-	RecipientType string `json:"recipient_type" binding:"required,oneof=MEMBER GROUP FAMILY CUSTOM"`
+	RecipientType string `json:"recipient_type" binding:"required,oneof=member group family custom"`
 	RecipientID   string `json:"recipient_id" binding:"required"`
 }
 
 type UpdateCommunicationRequest struct {
-	Type          string `json:"type" binding:"required,oneof=EMAIL SMS WHATSAPP"`
+	Type          string `json:"type" binding:"required,oneof=email sms whatsapp"`
 	Subject       string `json:"subject" binding:"required"`
 	Content       string `json:"content" binding:"required"`
-	RecipientType string `json:"recipient_type" binding:"required,oneof=MEMBER GROUP FAMILY CUSTOM"`
+	RecipientType string `json:"recipient_type" binding:"required,oneof=member group family custom"`
 	RecipientID   string `json:"recipient_id" binding:"required"`
 }
 

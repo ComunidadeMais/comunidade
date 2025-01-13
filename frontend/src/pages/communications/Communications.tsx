@@ -20,7 +20,9 @@ import {
     InputAdornment,
     TablePagination,
     CircularProgress,
-    Tooltip
+    Tooltip,
+    Checkbox,
+    Snackbar
 } from '@mui/material';
 import {
     Add as AddIcon,
@@ -55,9 +57,9 @@ const statusColors: Record<string, 'default' | 'primary' | 'success' | 'error'> 
     failed: 'error'
 };
 
-const formatDate = (dateString: string) => {
+const formatDate = (dateString: string | null | undefined): string => {
     try {
-        if (!dateString) return 'Data inválida';
+        if (!dateString) return 'Data não disponível';
         const date = new Date(dateString);
         if (isNaN(date.getTime())) {
             return 'Data inválida';
@@ -79,6 +81,10 @@ const Communications: FC = () => {
     const [search, setSearch] = useState('');
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
+    const [selected, setSelected] = useState<string[]>([]);
+    const [sendingStatus, setSendingStatus] = useState<{ [key: string]: boolean }>({});
+    const [snackbarOpen, setSnackbarOpen] = useState(false);
+    const [snackbarMessage, setSnackbarMessage] = useState('');
 
     useEffect(() => {
         if (activeCommunity) {
@@ -97,6 +103,7 @@ const Communications: FC = () => {
         setError(null);
         try {
             const data = await CommunicationService.listCommunications(activeCommunity.id);
+            console.log('Dados recebidos:', data);
             setCommunications(data);
         } catch (err: any) {
             console.error('Erro ao carregar comunicações:', err);
@@ -115,38 +122,111 @@ const Communications: FC = () => {
         setPage(0);
     };
 
+    const handleSelectAllClick = (event: React.ChangeEvent<HTMLInputElement>) => {
+        if (event.target.checked) {
+            const newSelected = filteredCommunications
+                .filter(c => c.status === 'pending')
+                .map(c => c.id);
+            setSelected(newSelected);
+            return;
+        }
+        setSelected([]);
+    };
+
+    const handleClick = (id: string, status: string) => {
+        console.log('Status recebido:', status);
+        if (status !== 'pending') return;
+        
+        const selectedIndex = selected.indexOf(id);
+        let newSelected: string[] = [];
+
+        if (selectedIndex === -1) {
+            newSelected = newSelected.concat(selected, id);
+        } else if (selectedIndex === 0) {
+            newSelected = newSelected.concat(selected.slice(1));
+        } else if (selectedIndex === selected.length - 1) {
+            newSelected = newSelected.concat(selected.slice(0, -1));
+        } else if (selectedIndex > 0) {
+            newSelected = newSelected.concat(
+                selected.slice(0, selectedIndex),
+                selected.slice(selectedIndex + 1),
+            );
+        }
+
+        setSelected(newSelected);
+    };
+
+    const handleSendSelected = async () => {
+        if (!activeCommunity || selected.length === 0) return;
+
+        const newSendingStatus = { ...sendingStatus };
+        let successCount = 0;
+        let failCount = 0;
+
+        for (const id of selected) {
+            try {
+                newSendingStatus[id] = true;
+                setSendingStatus(newSendingStatus);
+                
+                await CommunicationService.sendCommunication(activeCommunity.id, id);
+                successCount++;
+            } catch (err) {
+                console.error(`Erro ao enviar comunicação ${id}:`, err);
+                failCount++;
+            } finally {
+                newSendingStatus[id] = false;
+                setSendingStatus(newSendingStatus);
+            }
+        }
+
+        let message = '';
+        if (successCount > 0) {
+            message += `${successCount} comunicação(ões) enviada(s) com sucesso. `;
+        }
+        if (failCount > 0) {
+            message += `${failCount} falha(s) no envio.`;
+        }
+
+        setSnackbarMessage(message);
+        setSnackbarOpen(true);
+        setSelected([]);
+        await loadCommunications();
+    };
+
+    const handleSendSingle = async (communicationId: string) => {
+        if (!activeCommunity) return;
+
+        const newSendingStatus = { ...sendingStatus, [communicationId]: true };
+        setSendingStatus(newSendingStatus);
+
+        try {
+            await CommunicationService.sendCommunication(activeCommunity.id, communicationId);
+            setSnackbarMessage('Comunicação enviada com sucesso');
+            await loadCommunications();
+        } catch (err: any) {
+            console.error('Erro ao enviar comunicação:', err);
+            setSnackbarMessage('Erro ao enviar comunicação');
+        } finally {
+            setSendingStatus({ ...newSendingStatus, [communicationId]: false });
+            setSnackbarOpen(true);
+        }
+    };
+
     const handleDelete = async (communicationId: string) => {
         if (!activeCommunity || !window.confirm('Tem certeza que deseja excluir esta comunicação?')) return;
 
         try {
             await CommunicationService.deleteCommunication(activeCommunity.id, communicationId);
             await loadCommunications();
+            setSnackbarMessage('Comunicação excluída com sucesso');
+            setSnackbarOpen(true);
         } catch (err: any) {
             console.error('Erro ao excluir comunicação:', err);
             setError('Erro ao excluir comunicação');
         }
     };
 
-    const handleSend = async (communicationId: string) => {
-        if (!activeCommunity) return;
-
-        try {
-            await CommunicationService.sendCommunication(activeCommunity.id, communicationId);
-            await loadCommunications();
-        } catch (err: any) {
-            console.error('Erro ao enviar comunicação:', err);
-            setError('Erro ao enviar comunicação');
-        }
-    };
-
-    const handleChangePage = (event: unknown, newPage: number) => {
-        setPage(newPage);
-    };
-
-    const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
-        setRowsPerPage(parseInt(event.target.value, 10));
-        setPage(0);
-    };
+    const isSelected = (id: string) => selected.indexOf(id) !== -1;
 
     if (!activeCommunity) {
         return (
@@ -165,14 +245,26 @@ const Communications: FC = () => {
                     <Typography variant="h4" component="h1">
                         Comunicações
                     </Typography>
-                    <Button
-                        variant="contained"
-                        color="primary"
-                        startIcon={<AddIcon />}
-                        onClick={() => navigate('/communications/new')}
-                    >
-                        Nova Comunicação
-                    </Button>
+                    <Box sx={{ display: 'flex', gap: 2 }}>
+                        {selected.length > 0 && (
+                            <Button
+                                variant="contained"
+                                color="success"
+                                startIcon={<SendIcon />}
+                                onClick={handleSendSelected}
+                            >
+                                Enviar Selecionados ({selected.length})
+                            </Button>
+                        )}
+                        <Button
+                            variant="contained"
+                            color="primary"
+                            startIcon={<AddIcon />}
+                            onClick={() => navigate('/communications/new')}
+                        >
+                            Nova Comunicação
+                        </Button>
+                    </Box>
                 </Box>
 
                 {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
@@ -200,6 +292,13 @@ const Communications: FC = () => {
                             <Table>
                                 <TableHead>
                                     <TableRow>
+                                        <TableCell padding="checkbox">
+                                            <Checkbox
+                                                indeterminate={selected.length > 0 && selected.length < filteredCommunications.filter(c => c.status === 'pending').length}
+                                                checked={filteredCommunications.filter(c => c.status === 'pending').length > 0 && selected.length === filteredCommunications.filter(c => c.status === 'pending').length}
+                                                onChange={handleSelectAllClick}
+                                            />
+                                        </TableCell>
                                         <TableCell>Tipo</TableCell>
                                         <TableCell>Assunto</TableCell>
                                         <TableCell>Status</TableCell>
@@ -210,74 +309,107 @@ const Communications: FC = () => {
                                 <TableBody>
                                     {loading ? (
                                         <TableRow>
-                                            <TableCell colSpan={5} align="center" sx={{ py: 3 }}>
+                                            <TableCell colSpan={6} align="center" sx={{ py: 3 }}>
                                                 <CircularProgress />
                                             </TableCell>
                                         </TableRow>
                                     ) : filteredCommunications.length === 0 ? (
                                         <TableRow>
-                                            <TableCell colSpan={5} align="center">
+                                            <TableCell colSpan={6} align="center">
                                                 Nenhuma comunicação encontrada
                                             </TableCell>
                                         </TableRow>
                                     ) : (
                                         filteredCommunications
                                             .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                                            .map((communication) => (
-                                                <TableRow key={communication.id}>
-                                                    <TableCell>
-                                                        <Chip
-                                                            label={typeLabels[communication.type]}
-                                                            size="small"
-                                                            color={communication.type === 'email' ? 'primary' : 'default'}
-                                                        />
-                                                    </TableCell>
-                                                    <TableCell>{communication.subject}</TableCell>
-                                                    <TableCell>
-                                                        <Chip
-                                                            label={statusLabels[communication.status]}
-                                                            size="small"
-                                                            color={statusColors[communication.status]}
-                                                        />
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        {formatDate(communication.createdAt)}
-                                                    </TableCell>
-                                                    <TableCell align="right">
-                                                        <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
-                                                            {communication.status === 'pending' && (
-                                                                <Tooltip title="Enviar">
+                                            .map((communication) => {
+                                                const isItemSelected = isSelected(communication.id);
+                                                const isSending = sendingStatus[communication.id];
+
+                                                return (
+                                                    <TableRow
+                                                        key={communication.id}
+                                                        hover
+                                                        onClick={() => handleClick(communication.id, communication.status)}
+                                                        role="checkbox"
+                                                        aria-checked={isItemSelected}
+                                                        selected={isItemSelected}
+                                                    >
+                                                        <TableCell padding="checkbox">
+                                                            <Checkbox
+                                                                checked={isItemSelected}
+                                                                disabled={communication.status !== 'pending'}
+                                                            />
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <Chip
+                                                                label={typeLabels[communication.type]}
+                                                                size="small"
+                                                                color={communication.type === 'email' ? 'primary' : 'default'}
+                                                            />
+                                                        </TableCell>
+                                                        <TableCell>{communication.subject}</TableCell>
+                                                        <TableCell>
+                                                            <Chip
+                                                                label={statusLabels[communication.status]}
+                                                                size="small"
+                                                                color={statusColors[communication.status]}
+                                                            />
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            {formatDate(communication.created_at)}
+                                                        </TableCell>
+                                                        <TableCell align="right">
+                                                            <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
+                                                                {communication.status === 'pending' && (
+                                                                    <Tooltip title="Enviar">
+                                                                        <IconButton
+                                                                            size="small"
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                handleSendSingle(communication.id);
+                                                                            }}
+                                                                            color="success"
+                                                                            disabled={isSending}
+                                                                        >
+                                                                            {isSending ? (
+                                                                                <CircularProgress size={20} />
+                                                                            ) : (
+                                                                                <SendIcon />
+                                                                            )}
+                                                                        </IconButton>
+                                                                    </Tooltip>
+                                                                )}
+                                                                <Tooltip title="Editar">
                                                                     <IconButton
                                                                         size="small"
-                                                                        onClick={() => handleSend(communication.id)}
-                                                                        color="success"
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            navigate(`/communications/${communication.id}/edit`);
+                                                                        }}
+                                                                        color="primary"
+                                                                        disabled={communication.status !== 'pending'}
                                                                     >
-                                                                        <SendIcon />
+                                                                        <EditIcon />
                                                                     </IconButton>
                                                                 </Tooltip>
-                                                            )}
-                                                            <Tooltip title="Editar">
-                                                                <IconButton
-                                                                    size="small"
-                                                                    onClick={() => navigate(`/communications/${communication.id}/edit`)}
-                                                                    color="primary"
-                                                                >
-                                                                    <EditIcon />
-                                                                </IconButton>
-                                                            </Tooltip>
-                                                            <Tooltip title="Excluir">
-                                                                <IconButton
-                                                                    size="small"
-                                                                    onClick={() => handleDelete(communication.id)}
-                                                                    color="error"
-                                                                >
-                                                                    <DeleteIcon />
-                                                                </IconButton>
-                                                            </Tooltip>
-                                                        </Box>
-                                                    </TableCell>
-                                                </TableRow>
-                                            ))
+                                                                <Tooltip title="Excluir">
+                                                                    <IconButton
+                                                                        size="small"
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            handleDelete(communication.id);
+                                                                        }}
+                                                                        color="error"
+                                                                    >
+                                                                        <DeleteIcon />
+                                                                    </IconButton>
+                                                                </Tooltip>
+                                                            </Box>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                );
+                                            })
                                     )}
                                 </TableBody>
                             </Table>
@@ -287,9 +419,12 @@ const Communications: FC = () => {
                             component="div"
                             count={filteredCommunications.length}
                             page={page}
-                            onPageChange={handleChangePage}
+                            onPageChange={(event, newPage) => setPage(newPage)}
                             rowsPerPage={rowsPerPage}
-                            onRowsPerPageChange={handleChangeRowsPerPage}
+                            onRowsPerPageChange={(event) => {
+                                setRowsPerPage(parseInt(event.target.value, 10));
+                                setPage(0);
+                            }}
                             labelRowsPerPage="Itens por página"
                             labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count}`}
                             rowsPerPageOptions={[10, 25, 50]}
@@ -297,6 +432,13 @@ const Communications: FC = () => {
                     </CardContent>
                 </Card>
             </Box>
+
+            <Snackbar
+                open={snackbarOpen}
+                autoHideDuration={6000}
+                onClose={() => setSnackbarOpen(false)}
+                message={snackbarMessage}
+            />
         </Container>
     );
 };

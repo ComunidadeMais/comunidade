@@ -55,11 +55,11 @@ const CommunicationForm: FC = () => {
     const [recipients, setRecipients] = useState<Recipient[]>([]);
     const [selectedRecipient, setSelectedRecipient] = useState<Recipient | null>(null);
     const [formData, setFormData] = useState<CreateCommunicationRequest>({
-        Type: 'email',
-        Subject: '',
-        Content: '',
-        RecipientType: 'member',
-        RecipientID: ''
+        type: 'email',
+        subject: '',
+        content: '',
+        recipient_type: 'member',
+        recipient_id: ''
     });
 
     useEffect(() => {
@@ -69,10 +69,10 @@ const CommunicationForm: FC = () => {
     }, [communicationId, activeCommunity]);
 
     useEffect(() => {
-        if (activeCommunity && formData.RecipientType) {
+        if (activeCommunity && formData.recipient_type) {
             loadRecipients();
         }
-    }, [activeCommunity, formData.RecipientType]);
+    }, [activeCommunity, formData.recipient_type]);
 
     const loadCommunication = async () => {
         if (!activeCommunity || !communicationId) return;
@@ -82,11 +82,11 @@ const CommunicationForm: FC = () => {
         try {
             const data = await CommunicationService.getCommunication(activeCommunity.id, communicationId);
             setFormData({
-                Type: data.type.toUpperCase(),
-                Subject: data.subject,
-                Content: data.content,
-                RecipientType: data.recipientType.toUpperCase(),
-                RecipientID: data.recipientId
+                type: data.type,
+                subject: data.subject,
+                content: data.content,
+                recipient_type: data.recipient_type,
+                recipient_id: data.recipient_id
             });
         } catch (err: any) {
             console.error('Erro ao carregar comunicação:', err);
@@ -102,9 +102,10 @@ const CommunicationForm: FC = () => {
         setLoadingRecipients(true);
         try {
             let data: Recipient[] = [];
-            switch (formData.RecipientType.toLowerCase()) {
+            switch (formData.recipient_type) {
                 case 'member':
                     const membersResponse = await MemberService.listMembers(activeCommunity.id);
+                    console.log('Membros recebidos:', membersResponse);
                     data = (membersResponse.members || []).map((member: { id: string; name: string }) => ({ 
                         id: member.id, 
                         name: member.name 
@@ -112,19 +113,22 @@ const CommunicationForm: FC = () => {
                     break;
                 case 'family':
                     const familiesResponse = await FamilyService.listFamilies(activeCommunity.id);
-                    data = (familiesResponse.families || []).map((family: { id: string; name: string }) => ({ 
+                    console.log('Famílias recebidas:', familiesResponse);
+                    data = familiesResponse.map((family: any) => ({ 
                         id: family.id, 
                         name: family.name 
                     }));
                     break;
                 case 'group':
                     const groupsResponse = await GroupService.listGroups(activeCommunity.id);
+                    console.log('Grupos recebidos:', groupsResponse);
                     data = (groupsResponse.groups || []).map((group: { id: string; name: string }) => ({ 
                         id: group.id, 
                         name: group.name 
                     }));
                     break;
             }
+            console.log('Dados mapeados para o Autocomplete:', data);
             setRecipients(data);
             setSelectedRecipient(null);
         } catch (err: any) {
@@ -143,11 +147,11 @@ const CommunicationForm: FC = () => {
         setError(null);
         try {
             const dataToSubmit = {
-                Type: formData.Type,
-                Subject: formData.Subject,
-                Content: formData.Content,
-                RecipientType: formData.RecipientType,
-                RecipientID: selectedRecipient.id
+                type: formData.type,
+                subject: formData.subject,
+                content: formData.content,
+                recipient_type: formData.recipient_type,
+                recipient_id: selectedRecipient.id
             };
 
             console.log('Dados a serem enviados:', dataToSubmit);
@@ -179,7 +183,7 @@ const CommunicationForm: FC = () => {
     };
 
     const getRecipientTypeLabel = () => {
-        switch (formData.RecipientType.toLowerCase()) {
+        switch (formData.recipient_type) {
             case 'member':
                 return 'Membro';
             case 'family':
@@ -218,13 +222,13 @@ const CommunicationForm: FC = () => {
                                     <FormControl fullWidth>
                                         <InputLabel>Tipo</InputLabel>
                                         <Select
-                                            value={formData.Type}
-                                            onChange={handleSelectChange('Type')}
+                                            value={formData.type}
+                                            onChange={handleSelectChange('type')}
                                             label="Tipo"
                                         >
-                                            <MenuItem value="EMAIL">E-mail</MenuItem>
-                                            <MenuItem value="SMS">SMS</MenuItem>
-                                            <MenuItem value="WHATSAPP">WhatsApp</MenuItem>
+                                            <MenuItem value="email">E-mail</MenuItem>
+                                            <MenuItem value="sms">SMS</MenuItem>
+                                            <MenuItem value="whatsapp">WhatsApp</MenuItem>
                                         </Select>
                                     </FormControl>
                                 </Grid>
@@ -233,8 +237,8 @@ const CommunicationForm: FC = () => {
                                     <FormControl fullWidth>
                                         <InputLabel>Tipo de Destinatário</InputLabel>
                                         <Select
-                                            value={formData.RecipientType}
-                                            onChange={handleSelectChange('RecipientType')}
+                                            value={formData.recipient_type}
+                                            onChange={handleSelectChange('recipient_type')}
                                             label="Tipo de Destinatário"
                                         >
                                             <MenuItem value="member">Membro</MenuItem>
@@ -273,8 +277,8 @@ const CommunicationForm: FC = () => {
                                     <TextField
                                         fullWidth
                                         label="Assunto"
-                                        value={formData.Subject}
-                                        onChange={handleTextChange('Subject')}
+                                        value={formData.subject}
+                                        onChange={handleTextChange('subject')}
                                     />
                                 </Grid>
 
@@ -282,8 +286,8 @@ const CommunicationForm: FC = () => {
                                     <TextField
                                         fullWidth
                                         label="Conteúdo"
-                                        value={formData.Content}
-                                        onChange={handleTextChange('Content')}
+                                        value={formData.content}
+                                        onChange={handleTextChange('content')}
                                         multiline
                                         rows={4}
                                     />

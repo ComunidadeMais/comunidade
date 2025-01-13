@@ -5,27 +5,27 @@ import "time"
 type CommunicationType string
 
 const (
-	CommunicationTypeEmail    CommunicationType = "EMAIL"
-	CommunicationTypeSMS      CommunicationType = "SMS"
-	CommunicationTypeWhatsApp CommunicationType = "WHATSAPP"
+	CommunicationTypeEmail    CommunicationType = "email"
+	CommunicationTypeSMS      CommunicationType = "sms"
+	CommunicationTypeWhatsApp CommunicationType = "whatsapp"
 )
 
 type CommunicationStatus string
 
 const (
-	CommunicationStatusPending   CommunicationStatus = "PENDING"
-	CommunicationStatusSent      CommunicationStatus = "SENT"
-	CommunicationStatusDelivered CommunicationStatus = "DELIVERED"
-	CommunicationStatusFailed    CommunicationStatus = "FAILED"
+	CommunicationStatusPending   CommunicationStatus = "pending"
+	CommunicationStatusSent      CommunicationStatus = "sent"
+	CommunicationStatusDelivered CommunicationStatus = "delivered"
+	CommunicationStatusFailed    CommunicationStatus = "failed"
 )
 
 type RecipientType string
 
 const (
-	RecipientTypeMember RecipientType = "MEMBER"
-	RecipientTypeGroup  RecipientType = "GROUP"
-	RecipientTypeFamily RecipientType = "FAMILY"
-	RecipientTypeCustom RecipientType = "CUSTOM"
+	RecipientTypeMember RecipientType = "member"
+	RecipientTypeGroup  RecipientType = "group"
+	RecipientTypeFamily RecipientType = "family"
+	RecipientTypeCustom RecipientType = "custom"
 )
 
 // Comunicação

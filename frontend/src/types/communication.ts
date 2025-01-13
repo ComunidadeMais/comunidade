@@ -7,11 +7,11 @@ export interface Communication {
     type: CommunicationType;
     subject: string;
     content: string;
-    recipientType: RecipientType;
-    recipientId: string;
+    recipient_type: RecipientType;
+    recipient_id: string;
     status: CommunicationStatus;
-    createdAt: string;
-    updatedAt: string;
+    created_at: string;
+    updated_at: string;
 }
 
 export interface CommunicationTemplate {
@@ -42,11 +42,11 @@ export interface CommunicationSettings {
 }
 
 export interface CreateCommunicationRequest {
-    Type: string;
-    Subject: string;
-    Content: string;
-    RecipientType: string;
-    RecipientID: string;
+    type: string;
+    subject: string;
+    content: string;
+    recipient_type: string;
+    recipient_id: string;
 }
 
 export interface CreateTemplateRequest {

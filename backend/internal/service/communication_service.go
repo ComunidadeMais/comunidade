@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/comunidade/backend/internal/domain"
+	"github.com/comunidade/backend/internal/email"
 	"github.com/comunidade/backend/internal/repository"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
@@ -99,9 +100,22 @@ func (s *communicationService) SendCommunication(ctx context.Context, communityI
 		return errors.New("communication already sent")
 	}
 
-	// Buscar destinatários com base no tipo
+	// Buscar configurações de email
+	settings, err := s.repos.Communication.GetSettings(ctx, communityID)
+	if err != nil {
+		return err
+	}
+	if settings == nil {
+		return errors.New("email settings not found")
+	}
+
+	if !settings.EmailEnabled {
+		return errors.New("email is not enabled")
+	}
+
 	var recipients []*domain.CommunicationRecipient
 
+	// Buscar destinatários com base no tipo
 	switch communication.RecipientType {
 	case domain.RecipientTypeMember:
 		member, err := s.repos.Member.FindByID(ctx, communityID, communication.RecipientID)
@@ -123,7 +137,7 @@ func (s *communicationService) SendCommunication(ctx context.Context, communityI
 		})
 
 	case domain.RecipientTypeGroup:
-		members, err := s.repos.Group.ListMembers(ctx, communityID, &repository.Filter{})
+		members, err := s.repos.Group.ListMembers(ctx, communication.RecipientID, nil)
 		if err != nil {
 			return err
 		}
@@ -148,28 +162,80 @@ func (s *communicationService) SendCommunication(ctx context.Context, communityI
 		if family == nil {
 			return errors.New("family not found")
 		}
-		recipients = append(recipients, &domain.CommunicationRecipient{
-			ID:              uuid.New().String(),
-			CommunicationID: communication.ID,
-			RecipientType:   domain.RecipientTypeFamily,
-			RecipientID:     family.ID,
-			Status:          domain.CommunicationStatusPending,
-			CreatedAt:       time.Now(),
-			UpdatedAt:       time.Now(),
-		})
-	}
 
-	// Criar destinatários
-	for _, recipient := range recipients {
-		err = s.repos.Communication.CreateRecipient(ctx, recipient)
+		// Buscar membros da família
+		members, err := s.repos.Family.ListFamilyMembers(ctx, family.ID)
 		if err != nil {
 			return err
+		}
+
+		for _, member := range members {
+			// Buscar dados do membro
+			memberData, err := s.repos.Member.FindByID(ctx, communityID, member.MemberID)
+			if err != nil {
+				return err
+			}
+			if memberData == nil {
+				continue
+			}
+
+			recipients = append(recipients, &domain.CommunicationRecipient{
+				ID:              uuid.New().String(),
+				CommunicationID: communication.ID,
+				RecipientType:   domain.RecipientTypeFamily,
+				RecipientID:     memberData.ID,
+				Email:           &memberData.Email,
+				Status:          domain.CommunicationStatusPending,
+				CreatedAt:       time.Now(),
+				UpdatedAt:       time.Now(),
+			})
+		}
+	}
+
+	// Configurar o cliente de email
+	mailer := email.NewMailer(&email.Config{
+		Host:     settings.EmailSMTPHost,
+		Port:     settings.EmailSMTPPort,
+		Username: settings.EmailUsername,
+		Password: settings.EmailPassword,
+		From:     settings.EmailFromAddress,
+	})
+
+	// Criar destinatários e enviar emails
+	for _, recipient := range recipients {
+		// Salvar destinatário
+		if err := s.repos.Communication.CreateRecipient(ctx, recipient); err != nil {
+			return err
+		}
+
+		// Enviar email se houver endereço
+		if recipient.Email != nil && *recipient.Email != "" {
+			err := mailer.SendEmail(*recipient.Email, communication.Subject, map[string]interface{}{
+				"subject": communication.Subject,
+				"content": communication.Content,
+			})
+
+			now := time.Now()
+			if err != nil {
+				recipient.Status = domain.CommunicationStatusFailed
+				errMsg := err.Error()
+				recipient.ErrorMessage = &errMsg
+			} else {
+				recipient.Status = domain.CommunicationStatusSent
+				recipient.SentAt = &now
+			}
+
+			if err := s.repos.Communication.UpdateRecipient(ctx, recipient); err != nil {
+				return err
+			}
 		}
 	}
 
 	// Atualizar status da comunicação
 	communication.Status = domain.CommunicationStatusSent
-	communication.UpdatedAt = time.Now()
+	now := time.Now()
+	communication.SentAt = &now
+	communication.UpdatedAt = now
 	return s.repos.Communication.Update(ctx, communication)
 }
 

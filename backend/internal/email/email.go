@@ -1,7 +1,10 @@
 package email
 
 import (
+	"bytes"
 	"fmt"
+	"html/template"
+	"path/filepath"
 
 	"gopkg.in/gomail.v2"
 )
@@ -31,6 +34,34 @@ func NewMailer(config *Config) *Mailer {
 		config: config,
 		dialer: dialer,
 	}
+}
+
+// SendEmail envia um email usando o template de comunicação
+func (m *Mailer) SendEmail(to, subject string, data interface{}) error {
+	msg := gomail.NewMessage()
+	msg.SetHeader("From", m.config.From)
+	msg.SetHeader("To", to)
+	msg.SetHeader("Subject", subject)
+
+	// Processar o template
+	templatePath := filepath.Join("templates", "email", "communication.html")
+	t, err := template.ParseFiles(templatePath)
+	if err != nil {
+		return fmt.Errorf("erro ao carregar template: %v", err)
+	}
+
+	var body bytes.Buffer
+	if err := t.Execute(&body, data); err != nil {
+		return fmt.Errorf("erro ao processar template: %v", err)
+	}
+
+	msg.SetBody("text/html", body.String())
+
+	if err := m.dialer.DialAndSend(msg); err != nil {
+		return fmt.Errorf("erro ao enviar email: %v", err)
+	}
+
+	return nil
 }
 
 func (m *Mailer) SendTestEmail(to, fromName string) error {
