@@ -25,13 +25,14 @@ import { useCommunity } from '../../contexts/CommunityContext';
 import { EventType } from '../../types/event';
 import dayjs from 'dayjs';
 import 'dayjs/locale/pt-br';
-import { Editor } from '@tinymce/tinymce-react';
-import tinymce from 'tinymce';
+import { CKEditor } from '@ckeditor/ckeditor5-react';
+import ClassicEditor from '@ckeditor/ckeditor5-build-classic';
+import type { Editor } from '@ckeditor/ckeditor5-core';
+import { CKEDITOR_CONFIG, DEFAULT_TEMPLATE } from '../../config/editor';
 import { uploadImage } from '../../services/upload';
 import { User } from '../../types/user';
-import { TINYMCE_CONFIG } from '../../config/editor';
-import { useUsers } from '../../contexts/UsersContext';
 import { API_BASE_URL } from '../../services/api';
+import { useUsers } from '../../contexts/UsersContext';
 
 interface LocationState {
   defaultStartDate?: string;
@@ -48,7 +49,7 @@ export function EventForm() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
-  const editorRef = useRef<any>(null);
+  const editorRef = useRef<Editor | null>(null);
   
   const locationState = location.state as LocationState;
   
@@ -82,7 +83,6 @@ export function EventForm() {
     const bannerPath = activeCommunity?.banner_url || activeCommunity?.banner || '';
     const bannerUrl = bannerPath ? `http://localhost:8080/uploads/${bannerPath}` : '';
 
-    // Debug da imagem do evento
     const imageUrl = formData.image_url ? `http://localhost:8080/uploads/${formData.image_url}` : '';
 
     const replacements = {
@@ -122,15 +122,13 @@ export function EventForm() {
   // Atualiza o template quando os dados mudarem
   useEffect(() => {
     const updateTemplate = () => {
-      if (editorRef.current && editorRef.current.getContent) {
-        // Sempre use o template padrão como base
-        const baseTemplate = TINYMCE_CONFIG.default_init.content_templates[0].content;
-        const processedTemplate = processTemplate(baseTemplate);
+      if (editorRef.current) {
+        const processedTemplate = processTemplate(DEFAULT_TEMPLATE);
         
         // Só atualiza se houver mudanças
-        const currentContent = editorRef.current.getContent();
+        const currentContent = editorRef.current.getData();
         if (currentContent !== processedTemplate) {
-          editorRef.current.setContent(processedTemplate);
+          editorRef.current.setData(processedTemplate);
         }
       }
     };
@@ -171,14 +169,14 @@ export function EventForm() {
           recurrence: event.recurrence || 'none',
           responsible_id: event.responsible_id || '',
           image_url: event.image_url || '',
-          html_template: event.html_template || TINYMCE_CONFIG.default_init.content_templates[0].content,
+          html_template: event.html_template || DEFAULT_TEMPLATE,
         };
         setFormData(newFormData);
         
         // Atualiza o template assim que o editor estiver pronto
-        if (editorRef.current && editorRef.current.getContent) {
-          const processedTemplate = processTemplate(event.html_template || TINYMCE_CONFIG.default_init.content_templates[0].content);
-          editorRef.current.setContent(processedTemplate);
+        if (editorRef.current) {
+          const processedTemplate = processTemplate(event.html_template || DEFAULT_TEMPLATE);
+          editorRef.current.setData(processedTemplate);
         }
       }
     } catch (err: any) {
@@ -202,9 +200,7 @@ export function EventForm() {
     setSuccess(null);
 
     try {
-      // Usa o template padrão como base
-      const baseTemplate = TINYMCE_CONFIG.default_init.content_templates[0].content;
-      const processedTemplate = processTemplate(baseTemplate);
+      const processedTemplate = processTemplate(DEFAULT_TEMPLATE);
 
       const payload = {
         ...formData,
@@ -255,11 +251,9 @@ export function EventForm() {
         }));
 
         // Força a atualização do template com a nova imagem
-        if (editorRef.current && editorRef.current.getContent) {
-          // Sempre use o template padrão como base
-          const baseTemplate = TINYMCE_CONFIG.default_init.content_templates[0].content;
-          const processedTemplate = processTemplate(baseTemplate);
-          editorRef.current.setContent(processedTemplate);
+        if (editorRef.current) {
+          const processedTemplate = processTemplate(DEFAULT_TEMPLATE);
+          editorRef.current.setData(processedTemplate);
         }
 
         setSuccess('Imagem carregada com sucesso!');
@@ -472,30 +466,17 @@ export function EventForm() {
                   <Typography variant="subtitle1" gutterBottom>
                     Template HTML do Evento
                   </Typography>
-                  <Editor
-                    onInit={(evt, editor) => {
+                  <CKEditor
+                    editor={ClassicEditor}
+                    config={CKEDITOR_CONFIG}
+                    data={processTemplate(DEFAULT_TEMPLATE)}
+                    onReady={(editor: Editor) => {
                       editorRef.current = editor;
-                      // Inicializa com o template processado
-                      const template = formData.html_template || TINYMCE_CONFIG.default_init.content_templates[0].content;
-                      const processedTemplate = processTemplate(template);
-                      editor.setContent(processedTemplate);
                     }}
-                    apiKey={TINYMCE_CONFIG.apiKey}
-                    initialValue={formData.html_template || TINYMCE_CONFIG.default_init.content_templates[0].content}
-                    init={{
-                      ...TINYMCE_CONFIG.default_init,
-                      content_templates: TINYMCE_CONFIG.default_init.content_templates,
-                      setup: (editor) => {
-                        editor.on('init', () => {
-                          if (!formData.html_template) {
-                            const defaultTemplate = TINYMCE_CONFIG.default_init.content_templates[0].content;
-                            const processedTemplate = processTemplate(defaultTemplate);
-                            editor.setContent(processedTemplate);
-                          }
-                        });
-                      }
+                    onChange={(_event: any, editor: Editor) => {
+                      const data = editor.getData();
+                      handleTemplateChange(data);
                     }}
-                    onEditorChange={handleTemplateChange}
                   />
                 </Grid>
 
