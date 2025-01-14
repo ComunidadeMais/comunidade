@@ -31,6 +31,7 @@ import {
   Email as EmailIcon,
 } from '@mui/icons-material';
 import Navbar from './Navbar';
+import { useCommunity } from '../../contexts/CommunityContext';
 
 const DRAWER_WIDTH = 280;
 const COLLAPSED_DRAWER_WIDTH = 72;
@@ -137,9 +138,11 @@ export const MainLayout: FC<MainLayoutProps> = ({ children }) => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [expandedItems, setExpandedItems] = useState<{ [key: string]: boolean }>({});
+  const { loadCommunities } = useCommunity();
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
+    loadCommunities();
   };
 
   const handleDrawerCollapse = () => {

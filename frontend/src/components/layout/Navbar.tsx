@@ -40,7 +40,7 @@ const Navbar: FC<NavbarProps> = ({ onMenuClick }) => {
   const [user, setUser] = useState<User | null>(null);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [communityMenuAnchor, setCommunityMenuAnchor] = useState<null | HTMLElement>(null);
-  const { activeCommunity, communities, setActiveCommunity } = useCommunity();
+  const { activeCommunity, communities, setActiveCommunity, loadCommunities } = useCommunity();
 
   useEffect(() => {
     const loadUser = async () => {
@@ -73,6 +73,7 @@ const Navbar: FC<NavbarProps> = ({ onMenuClick }) => {
   };
 
   const handleCommunityMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    loadCommunities();
     setCommunityMenuAnchor(event.currentTarget);
   };
 
