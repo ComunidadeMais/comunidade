@@ -4,6 +4,9 @@ interface CustomEditorConfig extends EditorConfig {
   template?: {
     default: string;
   };
+  table?: {
+    contentToolbar?: string[];
+  };
 }
 
 export const DEFAULT_TEMPLATE = `<div style="max-width: 800px; margin: 0 auto; padding: 20px;">
@@ -38,30 +41,11 @@ export const DEFAULT_TEMPLATE = `<div style="max-width: 800px; margin: 0 auto; p
 </div>`;
 
 export const CKEDITOR_CONFIG: CustomEditorConfig = {
-  toolbar: [
-    'undo', 'redo',
-    '|', 'heading',
-    '|', 'bold', 'italic',
-    '|', 'link', 'uploadImage', 'insertTable', 'mediaEmbed',
-    '|', 'bulletedList', 'numberedList',
-    '|', 'alignment',
-    '|', 'sourceEditing'
-  ],
+  toolbar: ['undo', 'redo', '|', 'heading', '|', 'bold', 'italic', '|', 'link', 'bulletedList', 'numberedList', '|', 'insertTable'],
   language: 'pt-br',
-  image: {
-    toolbar: [
-      'imageTextAlternative',
-      'imageStyle:inline',
-      'imageStyle:block',
-      'imageStyle:side'
-    ]
-  },
+  removePlugins: ['Title', 'CKFinderUploadAdapter', 'CKFinder', 'EasyImage', 'Image', 'ImageCaption', 'ImageStyle', 'ImageToolbar', 'ImageUpload', 'MediaEmbed'],
   table: {
-    contentToolbar: [
-      'tableColumn',
-      'tableRow',
-      'mergeTableCells'
-    ]
+    contentToolbar: ['tableColumn', 'tableRow', 'mergeTableCells']
   },
   template: {
     default: DEFAULT_TEMPLATE

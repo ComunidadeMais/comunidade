@@ -49,6 +49,8 @@ export function EventForm() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [editorData, setEditorData] = useState('');
+  const [editorReady, setEditorReady] = useState(false);
   const editorRef = useRef<Editor | null>(null);
   
   const locationState = location.state as LocationState;
@@ -121,21 +123,17 @@ export function EventForm() {
 
   // Atualiza o template quando os dados mudarem
   useEffect(() => {
-    const updateTemplate = () => {
-      if (editorRef.current) {
+    if (editorRef.current && editorReady && activeCommunity) {
+      try {
         const processedTemplate = processTemplate(DEFAULT_TEMPLATE);
-        
-        // Só atualiza se houver mudanças
-        const currentContent = editorRef.current.getData();
-        if (currentContent !== processedTemplate) {
+        const currentData = editorRef.current.getData();
+        if (processedTemplate !== currentData) {
           editorRef.current.setData(processedTemplate);
         }
+      } catch (error) {
+        console.error('Erro ao atualizar template:', error);
       }
-    };
-
-    // Aguarda um pequeno intervalo para garantir que o editor está pronto
-    const timeoutId = setTimeout(updateTemplate, 100);
-    return () => clearTimeout(timeoutId);
+    }
   }, [
     formData.title,
     formData.description,
@@ -147,8 +145,20 @@ export function EventForm() {
     activeCommunity?.banner,
     activeCommunity?.banner_url,
     activeCommunity?.name,
-    users
+    users,
+    editorReady
   ]);
+
+  // Limpa o editor quando o componente é desmontado
+  useEffect(() => {
+    return () => {
+      if (editorRef.current) {
+        editorRef.current.destroy()
+          .catch(error => console.error('Erro ao destruir editor:', error));
+        editorRef.current = null;
+      }
+    };
+  }, []);
 
   const loadEvent = async () => {
     if (!activeCommunity || !eventId) return;
@@ -472,10 +482,15 @@ export function EventForm() {
                     data={processTemplate(DEFAULT_TEMPLATE)}
                     onReady={(editor: Editor) => {
                       editorRef.current = editor;
+                      setEditorReady(true);
                     }}
                     onChange={(_event: any, editor: Editor) => {
                       const data = editor.getData();
+                      setEditorData(data);
                       handleTemplateChange(data);
+                    }}
+                    onError={(error: Error, { phase }: { phase: string }) => {
+                      console.error(`CKEditor error (${phase}):`, error);
                     }}
                   />
                 </Grid>
