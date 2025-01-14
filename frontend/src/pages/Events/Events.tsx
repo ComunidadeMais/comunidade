@@ -32,25 +32,26 @@ import {
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { EventService } from '../../services/event';
-import { Event } from '../../types/event';
+import { Event, EventWithResponsible } from '../../types/event';
 import { useCommunity } from '../../contexts/CommunityContext';
+import { useUsers } from '../../contexts/UsersContext';
 import dayjs from 'dayjs';
 import 'dayjs/locale/pt-br';
 
 export function Events() {
   const navigate = useNavigate();
   const { activeCommunity } = useCommunity();
+  const { users } = useUsers();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [events, setEvents] = useState<Event[]>([]);
-  const [filteredEvents, setFilteredEvents] = useState<Event[]>([]);
+  const [events, setEvents] = useState<EventWithResponsible[]>([]);
+  const [filteredEvents, setFilteredEvents] = useState<EventWithResponsible[]>([]);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
   useEffect(() => {
     if (activeCommunity) {
-      console.log('Comunidade ativa:', activeCommunity);
       loadEvents();
     }
   }, [activeCommunity]);
@@ -59,18 +60,55 @@ export function Events() {
     filterEvents();
   }, [search, events]);
 
+  useEffect(() => {
+    if (events.length > 0 && users?.length > 0) {
+      const updatedEvents: EventWithResponsible[] = events.map(event => {
+        const responsible = users.find(user => user.id === event.responsible_id);
+        return {
+          ...event,
+          responsible: responsible ? {
+            id: responsible.id,
+            name: responsible.name,
+            email: responsible.email
+          } : undefined
+        };
+      });
+
+      const hasChanges = JSON.stringify(events) !== JSON.stringify(updatedEvents);
+      if (hasChanges) {
+        setEvents(updatedEvents);
+      }
+    }
+  }, [users]);
+
   const loadEvents = async () => {
     if (!activeCommunity) return;
 
     setLoading(true);
     setError(null);
     try {
-      console.log('Iniciando carregamento de eventos...');
       const data = await EventService.listEvents(activeCommunity.id);
-      console.log('Eventos carregados:', data);
-      setEvents(Array.isArray(data) ? data : []);
+      
+      if (users?.length > 0) {
+        const eventsWithResponsibles: EventWithResponsible[] = data.map(event => {
+          const responsible = users.find(user => user.id === event.responsible_id);
+          return {
+            ...event,
+            responsible: responsible ? {
+              id: responsible.id,
+              name: responsible.name,
+              email: responsible.email
+            } : undefined
+          };
+        });
+        setEvents(Array.isArray(eventsWithResponsibles) ? eventsWithResponsibles : []);
+      } else {
+        setEvents(Array.isArray(data) ? data.map(event => ({
+          ...event,
+          responsible: undefined
+        })) : []);
+      }
     } catch (err: any) {
-      console.error('Error details:', err.response?.data);
       setError(err.response?.data?.message || 'Erro ao carregar eventos');
       setEvents([]);
     } finally {
@@ -255,7 +293,7 @@ export function Events() {
                           <TableCell>
                             {event.image_url ? (
                               <Avatar
-                                src={event.image_url}
+                                src={`http://localhost:8080/uploads/${event.image_url}`}
                                 alt={event.title}
                                 variant="rounded"
                                 sx={{ width: 56, height: 56 }}
@@ -289,11 +327,11 @@ export function Events() {
                             />
                           </TableCell>
                           <TableCell>
-                            {event.responsible ? (
-                              <Tooltip title={event.responsible.email}>
+                            {event.responsible_id ? (
+                              <Tooltip title={event.responsible?.email || ''}>
                                 <Chip
-                                  avatar={<Avatar>{event.responsible.name[0]}</Avatar>}
-                                  label={event.responsible.name}
+                                  avatar={<Avatar>{event.responsible?.name?.[0] || '?'}</Avatar>}
+                                  label={event.responsible?.name || 'Responsável não encontrado'}
                                   variant="outlined"
                                   size="small"
                                 />

@@ -78,20 +78,12 @@ export function EventForm() {
       ? dayjs(formData.end_date).locale('pt-br').format('DD [de] MMMM [de] YYYY [às] HH:mm')
       : '';
 
-    // Debug da comunidade ativa
-    console.log('Comunidade ativa:', activeCommunity);
-    console.log('Banner URL:', activeCommunity?.banner_url);
-    console.log('Banner:', activeCommunity?.banner);
-
     // Tenta obter a URL do banner da comunidade
     const bannerPath = activeCommunity?.banner_url || activeCommunity?.banner || '';
     const bannerUrl = bannerPath ? `http://localhost:8080/uploads/${bannerPath}` : '';
-    console.log('Banner URL final:', bannerUrl);
 
     // Debug da imagem do evento
-    console.log('Image URL:', formData.image_url);
     const imageUrl = formData.image_url ? `http://localhost:8080/uploads/${formData.image_url}` : '';
-    console.log('Image URL final:', imageUrl);
 
     const replacements = {
       '[LOGO_URL]': bannerUrl,
@@ -106,19 +98,10 @@ export function EventForm() {
       '[RESPONSAVEL_EMAIL]': responsibleUser?.email || ''
     };
 
-    // Debug das substituições
-    console.log('Substituições:', replacements);
-
     let processedTemplate = template;
     Object.entries(replacements).forEach(([key, value]) => {
       const regex = new RegExp(key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
       processedTemplate = processedTemplate.replace(regex, value);
-      
-      // Debug da substituição
-      if (key === '[IMAGEM_URL]') {
-        console.log('Substituindo imagem:', key, '=>', value);
-        console.log('Template após substituição da imagem:', processedTemplate);
-      }
     });
 
     return processedTemplate;
@@ -131,7 +114,6 @@ export function EventForm() {
         community_id: activeCommunity.id
       }));
       if (eventId) {
-        console.log('Editando evento:', eventId);
         loadEvent();
       }
     }
@@ -144,9 +126,6 @@ export function EventForm() {
         // Sempre use o template padrão como base
         const baseTemplate = TINYMCE_CONFIG.default_init.content_templates[0].content;
         const processedTemplate = processTemplate(baseTemplate);
-        
-        // Debug do template processado
-        console.log('Template processado:', processedTemplate);
         
         // Só atualiza se houver mudanças
         const currentContent = editorRef.current.getContent();
@@ -179,7 +158,6 @@ export function EventForm() {
     try {
       setLoading(true);
       const event = await EventService.getEvent(activeCommunity.id, eventId);
-      console.log('Evento carregado:', event);
       
       if (event) {
         const newFormData = {
@@ -204,7 +182,6 @@ export function EventForm() {
         }
       }
     } catch (err: any) {
-      console.error('Erro ao carregar evento:', err);
       setError('Erro ao carregar dados do evento');
     } finally {
       setLoading(false);
@@ -236,10 +213,8 @@ export function EventForm() {
         end_date: dayjs(formData.end_date).format('YYYY-MM-DDTHH:mm:00Z'),
         description: formData.description.trim(),
         html_template: processedTemplate,
-        image_url: formData.image_url // Garante que a URL da imagem seja incluída no payload
+        image_url: formData.image_url
       };
-
-      console.log('Payload do evento:', payload);
 
       if (eventId) {
         await EventService.updateEvent(activeCommunity.id, eventId, payload);
@@ -250,7 +225,6 @@ export function EventForm() {
       }
       navigate('/events');
     } catch (err: any) {
-      console.error('Error details:', err.response?.data);
       setError(err.response?.data?.details || err.response?.data?.message || 'Erro ao salvar evento');
     } finally {
       setLoading(false);
@@ -273,7 +247,6 @@ export function EventForm() {
         
         // Upload da imagem usando o serviço de eventos
         const imageUrl = await EventService.uploadImage(activeCommunity.id, eventId || null, e.target.files[0]);
-        console.log('URL da imagem após upload:', imageUrl);
         
         // Atualiza o formData com a URL da imagem
         setFormData(prev => ({
@@ -291,7 +264,6 @@ export function EventForm() {
 
         setSuccess('Imagem carregada com sucesso!');
       } catch (err: any) {
-        console.error('Erro ao fazer upload da imagem:', err);
         setError(err.message || 'Erro ao fazer upload da imagem');
       } finally {
         setLoading(false);

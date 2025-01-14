@@ -32,6 +32,14 @@ export interface Event {
   updated_at: string;
 }
 
+export interface EventWithResponsible extends Omit<Event, 'responsible'> {
+  responsible?: {
+    id: string;
+    name: string;
+    email: string;
+  };
+}
+
 export interface CreateEventRequest {
   community_id: string;
   title: string;
