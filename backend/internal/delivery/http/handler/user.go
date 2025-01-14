@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/comunidade/backend/internal/domain"
+	"github.com/comunidade/backend/internal/repository"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
@@ -225,4 +226,56 @@ func isValidImageType(contentType string) bool {
 		"image/gif":  true,
 	}
 	return validTypes[contentType]
+}
+
+func (h *Handler) ListUsers(c *gin.Context) {
+	// Obtém os parâmetros de paginação
+	page := 1
+	perPage := 10
+
+	if pageQuery := c.Query("page"); pageQuery != "" {
+		if _, err := fmt.Sscanf(pageQuery, "%d", &page); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Página inválida"})
+			return
+		}
+	}
+	if perPageQuery := c.Query("per_page"); perPageQuery != "" {
+		if _, err := fmt.Sscanf(perPageQuery, "%d", &perPage); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Limite inválido"})
+			return
+		}
+	}
+
+	// Lista os usuários
+	users, total, err := h.repos.User.List(context.Background(), &repository.Filter{
+		Page:    page,
+		PerPage: perPage,
+	})
+	if err != nil {
+		h.logger.Error("erro ao listar usuários", zap.Error(err))
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro interno do servidor"})
+		return
+	}
+
+	// Adiciona o URL base aos avatares
+	for i := range users {
+		if users[i].Avatar != "" {
+			users[i].Avatar = fmt.Sprintf("http://localhost:8080/%s", users[i].Avatar)
+		}
+	}
+
+	h.logger.Info("listando usuários",
+		zap.Int("total", int(total)),
+		zap.Int("page", page),
+		zap.Int("per_page", perPage))
+
+	c.JSON(http.StatusOK, gin.H{
+		"users": users,
+		"pagination": gin.H{
+			"total":       total,
+			"page":        page,
+			"per_page":    perPage,
+			"total_pages": (total + int64(perPage) - 1) / int64(perPage),
+		},
+	})
 }

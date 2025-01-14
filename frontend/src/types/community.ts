@@ -4,7 +4,9 @@ export interface Community {
   slug: string;
   description: string;
   logo: string;
+  logo_url: string;
   banner: string;
+  banner_url: string;
   website: string;
   email: string;
   phone: string;

@@ -1,4 +1,4 @@
-import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
+import axios from 'axios';
 import { 
   LoginRequest, 
   LoginResponse, 
@@ -10,21 +10,6 @@ import {
 
 const API_URL = 'http://localhost:8080/api/v1';
 
-let isRefreshing = false;
-let failedQueue: any[] = [];
-
-const processQueue = (error: any = null) => {
-  failedQueue.forEach(prom => {
-    if (error) {
-      prom.reject(error);
-    } else {
-      prom.resolve();
-    }
-  });
-
-  failedQueue = [];
-};
-
 const api = axios.create({
   baseURL: API_URL,
   headers: {
@@ -34,9 +19,8 @@ const api = axios.create({
 });
 
 // Interceptor para adicionar o token em todas as requisições
-api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
+api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
-  console.log('Token atual:', token);
 
   if (token && config.headers) {
     config.headers['Authorization'] = `Bearer ${token}`;
@@ -52,62 +36,12 @@ api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
 // Interceptor para lidar com erros de autenticação
 api.interceptors.response.use(
   (response) => response,
-  async (error: AxiosError) => {
-    const originalRequest = error.config;
-    
-    // Se não é erro de autenticação ou já é uma tentativa de refresh, rejeita direto
-    if (error.response?.status !== 401 || originalRequest?.url?.includes('/auth/refresh')) {
-      return Promise.reject(error);
-    }
-
-    // Se não tem refresh token, faz logout
-    const refreshToken = localStorage.getItem('refreshToken');
-    if (!refreshToken) {
+  (error) => {
+    if (error.response?.status === 401) {
       AuthService.logout();
       window.location.href = '/login';
-      return Promise.reject(error);
     }
-
-    if (!isRefreshing) {
-      isRefreshing = true;
-
-      try {
-        // Tenta renovar o token
-        const response = await api.post<LoginResponse>('/auth/refresh', {
-          refresh_token: refreshToken
-        });
-
-        const { token, user } = response.data;
-        localStorage.setItem('token', token);
-        localStorage.setItem('user', JSON.stringify(user));
-
-        // Atualiza o token no request original e nos requests da fila
-        if (originalRequest?.headers) {
-          originalRequest.headers.Authorization = `Bearer ${token}`;
-        }
-
-        processQueue();
-        
-        // Refaz a requisição original com o novo token
-        return api(originalRequest!);
-      } catch (refreshError) {
-        processQueue(refreshError);
-        AuthService.logout();
-        window.location.href = '/login';
-        return Promise.reject(refreshError);
-      } finally {
-        isRefreshing = false;
-      }
-    }
-
-    // Se já está renovando, adiciona a requisição à fila
-    return new Promise((resolve, reject) => {
-      failedQueue.push({ resolve, reject });
-    }).then(() => {
-      return api(originalRequest!);
-    }).catch((err) => {
-      return Promise.reject(err);
-    });
+    return Promise.reject(error);
   }
 );
 
@@ -115,9 +49,8 @@ export const AuthService = {
   async login(data: LoginRequest): Promise<LoginResponse> {
     try {
       const response = await api.post<LoginResponse>('/auth/login', data);
-      const { token, refresh_token, user } = response.data;
+      const { token, user } = response.data;
       localStorage.setItem('token', token);
-      localStorage.setItem('refreshToken', refresh_token);
       localStorage.setItem('user', JSON.stringify(user));
       return response.data;
     } catch (error) {
@@ -197,7 +130,6 @@ export const AuthService = {
 
   logout(): void {
     localStorage.removeItem('token');
-    localStorage.removeItem('refreshToken');
     localStorage.removeItem('user');
   },
 

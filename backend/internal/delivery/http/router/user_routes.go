@@ -3,6 +3,7 @@ package router
 import "github.com/gin-gonic/gin"
 
 func InitUserRoutes(router *gin.RouterGroup, h RouteHandler) {
+	// Rotas do perfil do usuário
 	user := router.Group("/user")
 	{
 		user.GET("/profile", h.GetProfile)
@@ -10,4 +11,7 @@ func InitUserRoutes(router *gin.RouterGroup, h RouteHandler) {
 		user.PUT("/password", h.UpdatePassword)
 		user.PUT("/avatar", h.UpdateAvatar)
 	}
+
+	// Rota para listar usuários
+	router.GET("/users", h.ListUsers)
 }

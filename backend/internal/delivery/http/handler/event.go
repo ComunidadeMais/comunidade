@@ -14,23 +14,29 @@ import (
 )
 
 type CreateEventRequest struct {
-	Title       string    `json:"title" binding:"required,min=3"`
-	Description string    `json:"description" binding:"required"`
-	StartDate   time.Time `json:"start_date" binding:"required"`
-	EndDate     time.Time `json:"end_date" binding:"required"`
-	Location    string    `json:"location" binding:"required"`
-	Type        string    `json:"type" binding:"required,oneof=culto service class meeting visit other"`
-	Recurrence  string    `json:"recurrence" binding:"required,oneof=none daily weekly monthly"`
+	Title         string    `json:"title" binding:"required,min=3"`
+	Description   string    `json:"description" binding:"required"`
+	StartDate     time.Time `json:"start_date" binding:"required"`
+	EndDate       time.Time `json:"end_date" binding:"required"`
+	Location      string    `json:"location" binding:"required"`
+	Type          string    `json:"type" binding:"required,oneof=culto service class meeting visit other"`
+	Recurrence    string    `json:"recurrence" binding:"required,oneof=none daily weekly monthly"`
+	ResponsibleID string    `json:"responsible_id" binding:"required,uuid"`
+	ImageURL      string    `json:"image_url"`
+	HTMLTemplate  string    `json:"html_template"`
 }
 
 type UpdateEventRequest struct {
-	Title       string    `json:"title" binding:"required,min=3"`
-	Description string    `json:"description" binding:"required"`
-	StartDate   time.Time `json:"start_date" binding:"required"`
-	EndDate     time.Time `json:"end_date" binding:"required"`
-	Location    string    `json:"location" binding:"required"`
-	Type        string    `json:"type" binding:"required,oneof=culto service class meeting visit other"`
-	Recurrence  string    `json:"recurrence" binding:"required,oneof=none daily weekly monthly"`
+	Title         string    `json:"title" binding:"required,min=3"`
+	Description   string    `json:"description" binding:"required"`
+	StartDate     time.Time `json:"start_date" binding:"required"`
+	EndDate       time.Time `json:"end_date" binding:"required"`
+	Location      string    `json:"location" binding:"required"`
+	Type          string    `json:"type" binding:"required,oneof=culto service class meeting visit other"`
+	Recurrence    string    `json:"recurrence" binding:"required,oneof=none daily weekly monthly"`
+	ResponsibleID string    `json:"responsible_id" binding:"required,uuid"`
+	ImageURL      string    `json:"image_url"`
+	HTMLTemplate  string    `json:"html_template"`
 }
 
 type RegisterAttendanceRequest struct {
@@ -79,17 +85,20 @@ func (h *Handler) CreateEvent(c *gin.Context) {
 
 	// Cria o evento
 	event := &domain.Event{
-		ID:          uuid.New().String(),
-		CommunityID: communityID,
-		Title:       req.Title,
-		Description: req.Description,
-		StartDate:   req.StartDate,
-		EndDate:     req.EndDate,
-		Location:    req.Location,
-		Type:        req.Type,
-		Recurrence:  req.Recurrence,
-		CreatedAt:   time.Now(),
-		UpdatedAt:   time.Now(),
+		ID:            uuid.New().String(),
+		CommunityID:   communityID,
+		Title:         req.Title,
+		Description:   req.Description,
+		StartDate:     req.StartDate,
+		EndDate:       req.EndDate,
+		Location:      req.Location,
+		Type:          req.Type,
+		Recurrence:    req.Recurrence,
+		ResponsibleID: req.ResponsibleID,
+		ImageURL:      req.ImageURL,
+		HTMLTemplate:  req.HTMLTemplate,
+		CreatedAt:     time.Now(),
+		UpdatedAt:     time.Now(),
 	}
 
 	if err := h.repos.Event.Create(context.Background(), event); err != nil {
@@ -247,6 +256,9 @@ func (h *Handler) UpdateEvent(c *gin.Context) {
 	event.Location = req.Location
 	event.Type = req.Type
 	event.Recurrence = req.Recurrence
+	event.ResponsibleID = req.ResponsibleID
+	event.ImageURL = req.ImageURL
+	event.HTMLTemplate = req.HTMLTemplate
 	event.UpdatedAt = time.Now()
 
 	if err := h.repos.Event.Update(context.Background(), event); err != nil {
@@ -469,5 +481,106 @@ func (h *Handler) UpdateAttendance(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"message":    "Presença atualizada com sucesso",
 		"attendance": attendance,
+	})
+}
+
+func (h *Handler) GetPublicEvent(c *gin.Context) {
+	eventID := c.Param("eventId")
+
+	// Busca o evento diretamente pelo ID
+	event, err := h.repos.Event.FindPublicByID(context.Background(), eventID)
+	if err != nil {
+		h.logger.Error("erro ao buscar evento", zap.Error(err))
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro interno do servidor"})
+		return
+	}
+	if event == nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Evento não encontrado"})
+		return
+	}
+
+	// Busca a comunidade
+	community, err := h.repos.Community.FindByID(context.Background(), event.CommunityID)
+	if err != nil {
+		h.logger.Error("erro ao buscar comunidade", zap.Error(err))
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro interno do servidor"})
+		return
+	}
+	if community == nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Comunidade não encontrada"})
+		return
+	}
+
+	// Busca o responsável
+	responsible, err := h.repos.User.FindByID(context.Background(), event.ResponsibleID)
+	if err != nil {
+		h.logger.Error("erro ao buscar responsável", zap.Error(err))
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro interno do servidor"})
+		return
+	}
+
+	// Adiciona os dados da comunidade e do responsável ao evento
+	event.Community = community
+	event.Responsible = &domain.User{
+		ID:    responsible.ID,
+		Name:  responsible.Name,
+		Email: responsible.Email,
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"event": event,
+	})
+}
+
+func (h *Handler) UploadEventImage(c *gin.Context) {
+	// Obtém o usuário do contexto
+	user, exists := c.Get("user")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Token inválido"})
+		return
+	}
+
+	communityID := c.Param("communityId")
+	eventID := c.Param("eventId")
+
+	// Verifica se a comunidade existe
+	community, err := h.repos.Community.FindByID(context.Background(), communityID)
+	if err != nil {
+		h.logger.Error("erro ao buscar comunidade", zap.Error(err))
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro interno do servidor"})
+		return
+	}
+	if community == nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Comunidade não encontrada"})
+		return
+	}
+
+	// Verifica se o usuário tem permissão
+	if community.CreatedBy != user.(*domain.User).ID {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Você não tem permissão para fazer upload de imagens"})
+		return
+	}
+
+	// Recebe o arquivo
+	file, err := c.FormFile("file")
+	if err != nil {
+		h.logger.Error("erro ao receber arquivo", zap.Error(err))
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Erro ao receber arquivo"})
+		return
+	}
+
+	// Gera um nome único para o arquivo
+	filename := fmt.Sprintf("events/images/%s-%s-%s", communityID, eventID, file.Filename)
+
+	// Salva o arquivo
+	if err := c.SaveUploadedFile(file, "uploads/"+filename); err != nil {
+		h.logger.Error("erro ao salvar arquivo", zap.Error(err))
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao salvar arquivo"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":  "Imagem enviada com sucesso",
+		"filepath": filename,
 	})
 }

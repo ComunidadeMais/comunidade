@@ -1,4 +1,4 @@
-import { api } from './api';
+import api from './api';
 import { Member } from '../types/member';
 
 interface MemberResponse {

@@ -20,12 +20,10 @@ import {
   VisibilityOff as VisibilityOffIcon
 } from '@mui/icons-material';
 import { AuthService } from '../services/auth';
-import { useCommunity } from '../contexts/CommunityContext';
 
 const Login: FC = () => {
   const navigate = useNavigate();
   const theme = useTheme();
-  const { loadCommunities } = useCommunity();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -46,17 +44,17 @@ const Login: FC = () => {
     setLoading(true);
 
     try {
-      const response = await AuthService.login({ email, password });
-      
-      // Armazena o token
-      localStorage.setItem('token', response.token);
-      
-      // Carrega as comunidades e redireciona
-      await loadCommunities();
+      console.log('Iniciando login...');
+      await AuthService.login({ email, password });
+      console.log('Login bem sucedido, redirecionando...');
       navigate('/dashboard', { replace: true });
     } catch (err: any) {
       console.error('Erro no login:', err);
-      setError(err.response?.data?.message || 'Email ou senha inválidos');
+      if (err.response?.data?.message) {
+        setError(err.response.data.message);
+      } else {
+        setError('Email ou senha inválidos');
+      }
     } finally {
       setLoading(false);
     }

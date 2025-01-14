@@ -1,4 +1,4 @@
-import { api } from './api';
+import api from './api';
 import { Community } from '../types/community';
 
 interface Pagination {

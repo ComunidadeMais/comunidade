@@ -1,4 +1,4 @@
-import { api } from './api';
+import api from './api';
 import { CreateEventRequest, Event, UpdateEventRequest } from '../types/event';
 
 export const EventService = {
@@ -32,4 +32,31 @@ export const EventService = {
   async deleteEvent(communityId: string, eventId: string): Promise<void> {
     await api.delete(`/communities/${communityId}/events/${eventId}`);
   },
+
+  async getPublicEvent(eventId: string): Promise<Event> {
+    const response = await api.get(`/events/${eventId}/public`);
+    return response.data.event;
+  },
+
+  async uploadImage(communityId: string, eventId: string | null, file: File): Promise<string> {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const response = await api.post(
+        `/communities/${communityId}/events/${eventId || 'new'}/upload-image`,
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        }
+      );
+
+      return response.data.filepath;
+    } catch (error: any) {
+      console.error('Erro ao fazer upload da imagem:', error);
+      throw new Error(error.response?.data?.message || 'Erro ao fazer upload da imagem');
+    }
+  }
 }; 

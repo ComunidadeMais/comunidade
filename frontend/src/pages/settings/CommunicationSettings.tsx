@@ -17,7 +17,7 @@ import {
 } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
 import { useCommunity } from '../../contexts/CommunityContext';
-import { api } from '../../services/api';
+import api from '../../services/api';
 
 interface CommunicationSettings {
   id?: string;

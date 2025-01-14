@@ -16,6 +16,7 @@ type RouteHandler interface {
 	UpdateProfile(c *gin.Context)
 	UpdatePassword(c *gin.Context)
 	UpdateAvatar(c *gin.Context)
+	ListUsers(c *gin.Context)
 
 	// Community
 	CreateCommunity(c *gin.Context)
@@ -63,6 +64,8 @@ type RouteHandler interface {
 	DeleteEvent(c *gin.Context)
 	RegisterAttendance(c *gin.Context)
 	UpdateAttendance(c *gin.Context)
+	GetPublicEvent(c *gin.Context)
+	UploadEventImage(c *gin.Context)
 
 	// Communication methods
 	CreateCommunication(c *gin.Context)

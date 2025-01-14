@@ -14,6 +14,7 @@ type EventRepository interface {
 	Update(ctx context.Context, event *domain.Event) error
 	Delete(ctx context.Context, communityID, eventID string) error
 	FindByID(ctx context.Context, communityID, eventID string) (*domain.Event, error)
+	FindPublicByID(ctx context.Context, eventID string) (*domain.Event, error)
 	List(ctx context.Context, communityID string, filter *Filter) ([]*domain.Event, int64, error)
 	RegisterAttendance(ctx context.Context, attendance *domain.Attendance) error
 	UpdateAttendance(ctx context.Context, attendance *domain.Attendance) error
@@ -47,6 +48,19 @@ func (r *eventRepository) FindByID(ctx context.Context, communityID, eventID str
 	var event domain.Event
 	if err := r.GetDB().WithContext(ctx).
 		Where("community_id = ? AND id = ?", communityID, eventID).
+		First(&event).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &event, nil
+}
+
+func (r *eventRepository) FindPublicByID(ctx context.Context, eventID string) (*domain.Event, error) {
+	var event domain.Event
+	if err := r.GetDB().WithContext(ctx).
+		Where("id = ?", eventID).
 		First(&event).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, nil

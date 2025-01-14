@@ -1,33 +1,60 @@
-import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
+import axios from 'axios';
 
-export const api = axios.create({
-  baseURL: 'http://localhost:8080/api/v1',
+export const API_BASE_URL = 'http://localhost:8080/api/v1';
+
+const publicRoutes = [
+  '/events/*/public',
+  '/login',
+  '/register',
+  '/forgot-password'
+];
+
+const api = axios.create({
+  baseURL: API_BASE_URL,
   headers: {
-    'Content-Type': 'application/json',
-    'Accept': 'application/json',
+    'Content-Type': 'application/json'
   }
 });
 
-// Interceptor para adicionar o token em todas as requisições
-api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
+api.interceptors.request.use(config => {
   const token = localStorage.getItem('token');
+  const currentPath = config.url?.replace(config.baseURL || '', '');
   
-  if (token && config.headers) {
+  const isPublicRoute = publicRoutes.some(route => {
+    const pattern = new RegExp(route.replace('*', '[^/]+'));
+    return pattern.test(currentPath || '');
+  });
+  
+  console.log('Requisição para:', currentPath, 'É rota pública?', isPublicRoute);
+
+  if (token && config.headers && !isPublicRoute) {
+    console.log('Token adicionado ao header');
     config.headers['Authorization'] = `Bearer ${token}`;
   }
-  
+
   return config;
 });
 
-// Interceptor para tratar erros de autenticação
 api.interceptors.response.use(
-  (response) => response,
-  async (error: AxiosError) => {
-    if (error.response?.status === 401) {
-      // Se receber um erro 401 (não autorizado), redireciona para o login
+  response => response,
+  error => {
+    const currentPath = error.config?.url?.replace(error.config?.baseURL || '', '');
+    
+    const isPublicRoute = publicRoutes.some(route => {
+      const pattern = new RegExp(route.replace('*', '[^/]+'));
+      return pattern.test(currentPath || '');
+    });
+
+    console.log('Erro na requisição para:', currentPath, 'É rota pública?', isPublicRoute);
+
+    if (error.response?.status === 401 && !isPublicRoute) {
       localStorage.removeItem('token');
+      localStorage.removeItem('user');
       window.location.href = '/login';
     }
+
     return Promise.reject(error);
   }
-); 
+);
+
+export default api; 

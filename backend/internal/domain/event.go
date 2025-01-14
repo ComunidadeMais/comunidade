@@ -3,20 +3,24 @@ package domain
 import "time"
 
 type Event struct {
-	ID          string    `json:"id" gorm:"primaryKey;type:uuid"`
-	CommunityID string    `json:"community_id" gorm:"type:uuid;not null"`
-	Title       string    `json:"title" gorm:"not null"`
-	Description string    `json:"description" gorm:"not null"`
-	StartDate   time.Time `json:"start_date" gorm:"not null"`
-	EndDate     time.Time `json:"end_date" gorm:"not null"`
-	Location    string    `json:"location" gorm:"not null"`
-	Type        string    `json:"type" gorm:"not null;check:type IN ('culto', 'service', 'class', 'meeting', 'visit', 'other')"`
-	Recurrence  string    `json:"recurrence" gorm:"not null;default:'none';check:recurrence IN ('none', 'daily', 'weekly', 'monthly')"`
-	CreatedAt   time.Time `json:"created_at" gorm:"not null"`
-	UpdatedAt   time.Time `json:"updated_at" gorm:"not null"`
+	ID            string    `json:"id" gorm:"primaryKey;type:uuid"`
+	CommunityID   string    `json:"community_id" gorm:"type:uuid;not null"`
+	Title         string    `json:"title" gorm:"not null"`
+	Description   string    `json:"description" gorm:"not null"`
+	StartDate     time.Time `json:"start_date" gorm:"not null"`
+	EndDate       time.Time `json:"end_date" gorm:"not null"`
+	Location      string    `json:"location" gorm:"not null"`
+	Type          string    `json:"type" gorm:"not null;check:type IN ('culto', 'service', 'class', 'meeting', 'visit', 'other')"`
+	Recurrence    string    `json:"recurrence" gorm:"not null;default:'none';check:recurrence IN ('none', 'daily', 'weekly', 'monthly')"`
+	ResponsibleID string    `json:"responsible_id" gorm:"type:uuid"`
+	ImageURL      string    `json:"image_url" gorm:"type:text"`
+	HTMLTemplate  string    `json:"html_template" gorm:"type:text"`
+	CreatedAt     time.Time `json:"created_at" gorm:"not null"`
+	UpdatedAt     time.Time `json:"updated_at" gorm:"not null"`
 
 	// Relacionamentos
 	Community   *Community    `json:"community,omitempty" gorm:"foreignKey:CommunityID"`
+	Responsible *User         `json:"responsible,omitempty" gorm:"foreignKey:ResponsibleID"`
 	Attendances []*Attendance `json:"attendances,omitempty" gorm:"foreignKey:EventID"`
 }
 

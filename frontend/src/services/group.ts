@@ -1,4 +1,4 @@
-import { api } from './api';
+import api from './api';
 import { Group } from '../types/group';
 import { Member } from '../types/member';
 

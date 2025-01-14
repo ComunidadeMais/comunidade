@@ -12,6 +12,7 @@ func InitRoutes(r *gin.Engine, h RouteHandler, authMiddleware gin.HandlerFunc) {
 
 	// Rotas públicas
 	InitAuthRoutes(api, h)
+	InitPublicEventRoutes(api, h)
 
 	// Rotas protegidas
 	protected := api.Group("")

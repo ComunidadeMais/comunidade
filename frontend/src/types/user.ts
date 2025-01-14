@@ -6,6 +6,7 @@ export interface User {
   status: string;
   phone: string;
   avatar: string;
+  avatar_url: string;
   bio: string;
   date_of_birth: string | null;
   gender: string;

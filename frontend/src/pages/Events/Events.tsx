@@ -20,12 +20,15 @@ import {
   TextField,
   InputAdornment,
   CircularProgress,
+  Avatar,
 } from '@mui/material';
 import {
   Add as AddIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
   Search as SearchIcon,
+  Visibility as VisibilityIcon,
+  Person as PersonIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { EventService } from '../../services/event';
@@ -220,25 +223,27 @@ export function Events() {
               <Table>
                 <TableHead>
                   <TableRow>
+                    <TableCell>Imagem</TableCell>
                     <TableCell>Título</TableCell>
                     <TableCell>Local</TableCell>
                     <TableCell>Data de Início</TableCell>
                     <TableCell>Data de Término</TableCell>
                     <TableCell>Tipo</TableCell>
                     <TableCell>Recorrência</TableCell>
+                    <TableCell>Responsável</TableCell>
                     <TableCell align="right">Ações</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
                   {loading ? (
                     <TableRow>
-                      <TableCell colSpan={7} align="center" sx={{ py: 3 }}>
+                      <TableCell colSpan={9} align="center" sx={{ py: 3 }}>
                         <CircularProgress />
                       </TableCell>
                     </TableRow>
                   ) : filteredEvents.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={7} align="center">
+                      <TableCell colSpan={9} align="center">
                         Nenhum evento encontrado
                       </TableCell>
                     </TableRow>
@@ -247,6 +252,20 @@ export function Events() {
                       .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                       .map((event) => (
                         <TableRow key={event.id}>
+                          <TableCell>
+                            {event.image_url ? (
+                              <Avatar
+                                src={event.image_url}
+                                alt={event.title}
+                                variant="rounded"
+                                sx={{ width: 56, height: 56 }}
+                              />
+                            ) : (
+                              <Avatar variant="rounded" sx={{ width: 56, height: 56 }}>
+                                <PersonIcon />
+                              </Avatar>
+                            )}
+                          </TableCell>
                           <TableCell>{event.title}</TableCell>
                           <TableCell>{event.location}</TableCell>
                           <TableCell>
@@ -269,15 +288,35 @@ export function Events() {
                               variant="outlined"
                             />
                           </TableCell>
+                          <TableCell>
+                            {event.responsible ? (
+                              <Tooltip title={event.responsible.email}>
+                                <Chip
+                                  avatar={<Avatar>{event.responsible.name[0]}</Avatar>}
+                                  label={event.responsible.name}
+                                  variant="outlined"
+                                  size="small"
+                                />
+                              </Tooltip>
+                            ) : (
+                              '-'
+                            )}
+                          </TableCell>
                           <TableCell align="right">
                             <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
+                              <Tooltip title="Visualizar">
+                                <IconButton
+                                  size="small"
+                                  onClick={() => window.open(`/events/${event.id}/view`, '_blank')}
+                                  color="info"
+                                >
+                                  <VisibilityIcon />
+                                </IconButton>
+                              </Tooltip>
                               <Tooltip title="Editar">
                                 <IconButton
                                   size="small"
-                                  onClick={() => {
-                                    console.log('Editando evento:', event.id);
-                                    navigate(`/events/${event.id}/edit`);
-                                  }}
+                                  onClick={() => navigate(`/events/${event.id}/edit`)}
                                   color="primary"
                                 >
                                   <EditIcon />
