@@ -62,7 +62,6 @@ export default function CommunicationForm() {
 
   const [formData, setFormData] = useState({
     type: 'email' as CommunicationType,
-    title: '',
     subject: '',
     content: '',
     recipient_type: 'member' as RecipientType,
@@ -98,7 +97,6 @@ export default function CommunicationForm() {
       if (communication) {
         setFormData({
           type: communication.type || 'email',
-          title: communication.title || '',
           subject: communication.subject || '',
           content: communication.content || '',
           recipient_type: communication.recipient_type || 'member',
@@ -164,11 +162,13 @@ export default function CommunicationForm() {
     try {
       const finalContent = DEFAULT_TEMPLATE
         .replace('[CONTEUDO]', editorContent)
-        .replace(/\[COMUNIDADE_NOME\]/g, activeCommunity.name);
+        .replace(/\[COMUNIDADE_NOME\]/g, activeCommunity.name)
+        .replace('[ASSUNTO]', formData.subject);
 
       const payload = {
         ...formData,
         content: finalContent,
+        title: '',
       };
 
       if (communicationId) {
@@ -265,9 +265,9 @@ export default function CommunicationForm() {
                 <Grid item xs={12} md={8}>
                   <TextField
                     fullWidth
-                    label="Título"
-                    name="title"
-                    value={formData.title}
+                    label="Assunto"
+                    name="subject"
+                    value={formData.subject}
                     onChange={handleTextChange}
                     required
                   />
@@ -315,17 +315,6 @@ export default function CommunicationForm() {
                       ))}
                     </Select>
                   </FormControl>
-                </Grid>
-
-                <Grid item xs={12}>
-                  <TextField
-                    fullWidth
-                    label="Assunto"
-                    name="subject"
-                    value={formData.subject}
-                    onChange={handleTextChange}
-                    required
-                  />
                 </Grid>
 
                 <Grid item xs={12}>

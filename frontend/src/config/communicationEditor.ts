@@ -22,6 +22,7 @@ export const DEFAULT_TEMPLATE = `<div style="max-width: 800px; margin: 0 auto; p
   <!-- Cabeçalho -->
   <div style="text-align: center; margin-bottom: 40px; padding: 30px; background: linear-gradient(135deg, #4A90E2, #2C82C9); border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
     <h2 style="color: #FFFFFF; margin: 0; font-size: 24px; font-weight: 600;">[COMUNIDADE_NOME]</h2>
+    <h3 style="color: #FFFFFF; margin: 10px 0 0 0; font-size: 18px; font-weight: normal;">[ASSUNTO]</h3>
   </div>
   
   <!-- Conteúdo Principal -->
