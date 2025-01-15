@@ -104,7 +104,7 @@ const Communications: FC = () => {
         try {
             const data = await CommunicationService.listCommunications(activeCommunity.id);
             console.log('Dados recebidos:', data);
-            setCommunications(data);
+            setCommunications(data.communications || []);
         } catch (err: any) {
             console.error('Erro ao carregar comunicações:', err);
             setError('Erro ao carregar comunicações');
@@ -114,8 +114,13 @@ const Communications: FC = () => {
     };
 
     const filterCommunications = () => {
+        if (!Array.isArray(communications)) {
+            setFilteredCommunications([]);
+            return;
+        }
+        
         const filtered = communications.filter(communication =>
-            communication.subject?.toLowerCase().includes(search.toLowerCase()) ||
+            communication.title?.toLowerCase().includes(search.toLowerCase()) ||
             communication.content?.toLowerCase().includes(search.toLowerCase())
         );
         setFilteredCommunications(filtered);

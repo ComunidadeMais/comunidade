@@ -4,7 +4,8 @@ import {
     CommunicationTemplate,
     CommunicationSettings,
     CreateCommunicationRequest,
-    CreateTemplateRequest
+    CreateTemplateRequest,
+    UpdateCommunicationRequest
 } from '../types/communication';
 
 const convertTemplate = (template: any): CommunicationTemplate => ({
@@ -25,9 +26,9 @@ export const CommunicationService = {
         return response.data.communication;
     },
 
-    listCommunications: async (communityId: string): Promise<Communication[]> => {
+    listCommunications: async (communityId: string): Promise<{ communications: Communication[]; total: number }> => {
         const response = await api.get(`/communities/${communityId}/communications`);
-        return response.data.communications;
+        return response.data;
     },
 
     getCommunication: async (communityId: string, communicationId: string): Promise<Communication> => {
@@ -35,7 +36,7 @@ export const CommunicationService = {
         return response.data.communication;
     },
 
-    updateCommunication: async (communityId: string, communicationId: string, data: CreateCommunicationRequest): Promise<Communication> => {
+    updateCommunication: async (communityId: string, communicationId: string, data: UpdateCommunicationRequest): Promise<Communication> => {
         const response = await api.put(`/communities/${communityId}/communications/${communicationId}`, data);
         return response.data.communication;
     },
@@ -87,5 +88,22 @@ export const CommunicationService = {
 
     testEmail: async (communityId: string): Promise<void> => {
         await api.post(`/communities/${communityId}/communications/test-email`);
+    },
+
+    uploadImage: async (communityId: string, communicationId: string | null, file: File): Promise<string> => {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const endpoint = communicationId
+            ? `/api/v1/communities/${communityId}/communications/${communicationId}/upload-image`
+            : `/api/v1/communities/${communityId}/communications/upload-image`;
+
+        const response = await api.post(endpoint, formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            }
+        });
+
+        return response.data.filepath;
     }
 }; 

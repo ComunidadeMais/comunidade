@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"html/template"
+	"log"
 	"path/filepath"
 
 	"gopkg.in/gomail.v2"
@@ -22,6 +23,12 @@ type Mailer struct {
 	dialer *gomail.Dialer
 }
 
+// EmailData estrutura para dados do email com conteúdo HTML
+type EmailData struct {
+	Subject string
+	Content template.HTML
+}
+
 func NewMailer(config *Config) *Mailer {
 	dialer := gomail.NewDialer(
 		config.Host,
@@ -38,29 +45,46 @@ func NewMailer(config *Config) *Mailer {
 
 // SendEmail envia um email usando o template de comunicação
 func (m *Mailer) SendEmail(to, subject string, data interface{}) error {
+	log.Printf("Iniciando envio de email para: %s", to)
+
+	// Converter o map para nossa estrutura EmailData
+	mapData, ok := data.(map[string]interface{})
+	if !ok {
+		return fmt.Errorf("dados inválidos para o email")
+	}
+
+	emailData := EmailData{
+		Subject: subject,
+		Content: template.HTML(mapData["content"].(string)),
+	}
+
 	msg := gomail.NewMessage()
 	msg.SetHeader("From", m.config.From)
 	msg.SetHeader("To", to)
 	msg.SetHeader("Subject", subject)
 
+	log.Printf("Configurações SMTP - Host: %s, Port: %d, From: %s", m.config.Host, m.config.Port, m.config.From)
+
 	// Processar o template
 	templatePath := filepath.Join("templates", "email", "communication.html")
-	t, err := template.ParseFiles(templatePath)
-	if err != nil {
-		return fmt.Errorf("erro ao carregar template: %v", err)
-	}
+	log.Printf("Usando template: %s", templatePath)
 
 	var body bytes.Buffer
-	if err := t.Execute(&body, data); err != nil {
+	if err := template.Must(template.ParseFiles(templatePath)).Execute(&body, emailData); err != nil {
+		log.Printf("Erro ao processar template: %v", err)
 		return fmt.Errorf("erro ao processar template: %v", err)
 	}
+
+	log.Printf("Conteúdo do email: %s", body.String())
 
 	msg.SetBody("text/html", body.String())
 
 	if err := m.dialer.DialAndSend(msg); err != nil {
+		log.Printf("Erro ao enviar email: %v", err)
 		return fmt.Errorf("erro ao enviar email: %v", err)
 	}
 
+	log.Printf("Email enviado com sucesso para: %s", to)
 	return nil
 }
 

@@ -1,321 +1,361 @@
-import { FC, useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
 import {
-    Box,
-    Typography,
-    Button,
-    Card,
-    CardContent,
-    Grid,
-    TextField,
-    FormControl,
-    InputLabel,
-    Select,
-    MenuItem,
-    CircularProgress,
-    Container,
-    Alert,
-    Autocomplete
+  Box,
+  Button,
+  Card,
+  CardContent,
+  Container,
+  Typography,
+  Alert,
+  TextField,
+  Grid,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  SelectChangeEvent,
 } from '@mui/material';
-import { SelectChangeEvent } from '@mui/material/Select';
-import { useCommunity } from '../../contexts/CommunityContext';
+import {
+  Save as SaveIcon,
+  ArrowBack as ArrowBackIcon
+} from '@mui/icons-material';
+import { useNavigate, useParams } from 'react-router-dom';
 import { CommunicationService } from '../../services/communication';
-import { CreateCommunicationRequest } from '../../types/communication';
+import { useCommunity } from '../../contexts/CommunityContext';
+import { CKEditor } from '@ckeditor/ckeditor5-react';
+import ClassicEditor from '@ckeditor/ckeditor5-build-classic';
+import type { Editor } from '@ckeditor/ckeditor5-core';
+import { CKEDITOR_CONFIG, DEFAULT_TEMPLATE } from '../../config/communicationEditor';
+import { CommunicationType, RecipientType } from '../../types/communication';
 import { MemberService } from '../../services/member';
 import { FamilyService } from '../../services/family';
 import { GroupService } from '../../services/group';
 
 interface Member {
-    id: string;
-    name: string;
+  id: string;
+  name: string;
 }
 
 interface Family {
-    id: string;
-    name: string;
+  id: string;
+  name: string;
 }
 
 interface Group {
-    id: string;
-    name: string;
+  id: string;
+  name: string;
 }
 
-interface Recipient {
-    id: string;
-    name: string;
-}
+export default function CommunicationForm() {
+  const navigate = useNavigate();
+  const { communicationId } = useParams();
+  const { activeCommunity } = useCommunity();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const [editorContent, setEditorContent] = useState('');
+  const [editorReady, setEditorReady] = useState(false);
+  const editorRef = useRef<Editor | null>(null);
+  const [members, setMembers] = useState<Member[]>([]);
+  const [families, setFamilies] = useState<Family[]>([]);
+  const [groups, setGroups] = useState<Group[]>([]);
 
-const CommunicationForm: FC = () => {
-    const navigate = useNavigate();
-    const { communicationId } = useParams();
-    const { activeCommunity } = useCommunity();
-    const [loading, setLoading] = useState(false);
-    const [loadingRecipients, setLoadingRecipients] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-    const [recipients, setRecipients] = useState<Recipient[]>([]);
-    const [selectedRecipient, setSelectedRecipient] = useState<Recipient | null>(null);
-    const [formData, setFormData] = useState<CreateCommunicationRequest>({
-        type: 'email',
-        subject: '',
-        content: '',
-        recipient_type: 'member',
-        recipient_id: ''
-    });
+  const [formData, setFormData] = useState({
+    type: 'email' as CommunicationType,
+    title: '',
+    subject: '',
+    content: '',
+    recipient_type: 'member' as RecipientType,
+    recipient_id: '',
+  });
 
-    useEffect(() => {
-        if (communicationId && activeCommunity) {
-            loadCommunication();
-        }
-    }, [communicationId, activeCommunity]);
-
-    useEffect(() => {
-        if (activeCommunity && formData.recipient_type) {
-            loadRecipients();
-        }
-    }, [activeCommunity, formData.recipient_type]);
-
-    const loadCommunication = async () => {
-        if (!activeCommunity || !communicationId) return;
-
-        setLoading(true);
-        setError(null);
-        try {
-            const data = await CommunicationService.getCommunication(activeCommunity.id, communicationId);
-            setFormData({
-                type: data.type,
-                subject: data.subject,
-                content: data.content,
-                recipient_type: data.recipient_type,
-                recipient_id: data.recipient_id
-            });
-        } catch (err: any) {
-            console.error('Erro ao carregar comunicação:', err);
-            setError('Erro ao carregar comunicação');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const loadRecipients = async () => {
-        if (!activeCommunity) return;
-
-        setLoadingRecipients(true);
-        try {
-            let data: Recipient[] = [];
-            switch (formData.recipient_type) {
-                case 'member':
-                    const membersResponse = await MemberService.listMembers(activeCommunity.id);
-                    console.log('Membros recebidos:', membersResponse);
-                    data = (membersResponse.members || []).map((member: { id: string; name: string }) => ({ 
-                        id: member.id, 
-                        name: member.name 
-                    }));
-                    break;
-                case 'family':
-                    const familiesResponse = await FamilyService.listFamilies(activeCommunity.id);
-                    console.log('Famílias recebidas:', familiesResponse);
-                    data = familiesResponse.map((family: any) => ({ 
-                        id: family.id, 
-                        name: family.name 
-                    }));
-                    break;
-                case 'group':
-                    const groupsResponse = await GroupService.listGroups(activeCommunity.id);
-                    console.log('Grupos recebidos:', groupsResponse);
-                    data = (groupsResponse.groups || []).map((group: { id: string; name: string }) => ({ 
-                        id: group.id, 
-                        name: group.name 
-                    }));
-                    break;
-            }
-            console.log('Dados mapeados para o Autocomplete:', data);
-            setRecipients(data);
-            setSelectedRecipient(null);
-        } catch (err: any) {
-            console.error('Erro ao carregar destinatários:', err);
-            setError('Erro ao carregar destinatários');
-        } finally {
-            setLoadingRecipients(false);
-        }
-    };
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!activeCommunity || !selectedRecipient) return;
-
-        setLoading(true);
-        setError(null);
-        try {
-            const dataToSubmit = {
-                type: formData.type,
-                subject: formData.subject,
-                content: formData.content,
-                recipient_type: formData.recipient_type,
-                recipient_id: selectedRecipient.id
-            };
-
-            console.log('Dados a serem enviados:', dataToSubmit);
-
-            if (communicationId) {
-                await CommunicationService.updateCommunication(activeCommunity.id, communicationId, dataToSubmit);
-            } else {
-                await CommunicationService.createCommunication(activeCommunity.id, dataToSubmit);
-            }
-            navigate('/communications');
-        } catch (err: any) {
-            console.error('Erro ao salvar comunicação:', err);
-            setError(err.response?.data?.error || 'Erro ao salvar comunicação');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleTextChange = (field: keyof CreateCommunicationRequest) => (
-        event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-    ) => {
-        setFormData(prev => ({ ...prev, [field]: event.target.value }));
-    };
-
-    const handleSelectChange = (field: keyof CreateCommunicationRequest) => (
-        event: SelectChangeEvent
-    ) => {
-        setFormData(prev => ({ ...prev, [field]: event.target.value }));
-    };
-
-    const getRecipientTypeLabel = () => {
-        switch (formData.recipient_type) {
-            case 'member':
-                return 'Membro';
-            case 'family':
-                return 'Família';
-            case 'group':
-                return 'Grupo';
-            default:
-                return 'Destinatário';
-        }
-    };
-
-    if (!activeCommunity) {
-        return (
-            <Container maxWidth="lg">
-                <Alert severity="warning" sx={{ mt: 4 }}>
-                    Selecione uma comunidade para gerenciar as comunicações.
-                </Alert>
-            </Container>
-        );
+  useEffect(() => {
+    if (activeCommunity && communicationId) {
+      loadCommunication();
     }
+  }, [activeCommunity, communicationId]);
 
+  useEffect(() => {
+    if (activeCommunity) {
+      loadRecipientOptions();
+    }
+  }, [activeCommunity, formData.recipient_type]);
+
+  useEffect(() => {
+    if (editorRef.current && !communicationId) {
+      editorRef.current.setData('');
+      setEditorContent('');
+    }
+  }, [editorReady]);
+
+  const loadCommunication = async () => {
+    if (!activeCommunity || !communicationId) return;
+
+    try {
+      setLoading(true);
+      const communication = await CommunicationService.getCommunication(activeCommunity.id, communicationId);
+      
+      if (communication) {
+        setFormData({
+          type: communication.type || 'email',
+          title: communication.title || '',
+          subject: communication.subject || '',
+          content: communication.content || '',
+          recipient_type: communication.recipient_type || 'member',
+          recipient_id: communication.recipient_id || '',
+        });
+        
+        if (editorRef.current) {
+          const content = extractContentFromTemplate(communication.content);
+          editorRef.current.setData(content);
+          setEditorContent(content);
+        }
+      }
+    } catch (err: any) {
+      setError('Erro ao carregar dados da comunicação');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const extractContentFromTemplate = (htmlContent: string): string => {
+    if (!htmlContent) return '';
+    
+    const match = htmlContent.match(/<div style="color: #757575; line-height: 1.6;">(.*?)<\/div>/s);
+    return match ? match[1].trim() : htmlContent;
+  };
+
+  const loadRecipientOptions = async () => {
+    if (!activeCommunity) return;
+
+    try {
+      switch (formData.recipient_type) {
+        case 'member':
+          const { members } = await MemberService.listMembers(activeCommunity.id);
+          setMembers(members || []);
+          break;
+        case 'family':
+          const families = await FamilyService.listFamilies(activeCommunity.id);
+          console.log('Famílias carregadas:', families);
+          setFamilies(families || []);
+          break;
+        case 'group':
+          const { groups } = await GroupService.listGroups(activeCommunity.id);
+          setGroups(groups || []);
+          break;
+      }
+    } catch (err) {
+      console.error('Erro ao carregar opções:', err);
+      setError('Erro ao carregar opções de destinatário');
+      setMembers([]);
+      setFamilies([]);
+      setGroups([]);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!activeCommunity) return;
+
+    setLoading(true);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      const finalContent = DEFAULT_TEMPLATE
+        .replace('[CONTEUDO]', editorContent)
+        .replace(/\[COMUNIDADE_NOME\]/g, activeCommunity.name);
+
+      const payload = {
+        ...formData,
+        content: finalContent,
+      };
+
+      if (communicationId) {
+        await CommunicationService.updateCommunication(activeCommunity.id, communicationId, payload);
+        setSuccess('Comunicação atualizada com sucesso!');
+      } else {
+        await CommunicationService.createCommunication(activeCommunity.id, payload);
+        setSuccess('Comunicação criada com sucesso!');
+      }
+      navigate('/communications');
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Erro ao salvar comunicação');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSelectChange = (e: SelectChangeEvent<string>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleTextChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  if (!activeCommunity) {
     return (
-        <Container maxWidth="lg">
-            <Box sx={{ mt: 4, mb: 4 }}>
-                <Typography variant="h4" component="h1" gutterBottom>
-                    {communicationId ? 'Editar Comunicação' : 'Nova Comunicação'}
-                </Typography>
-
-                {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-
-                <form onSubmit={handleSubmit}>
-                    <Card>
-                        <CardContent>
-                            <Grid container spacing={3}>
-                                <Grid item xs={12} md={6}>
-                                    <FormControl fullWidth>
-                                        <InputLabel>Tipo</InputLabel>
-                                        <Select
-                                            value={formData.type}
-                                            onChange={handleSelectChange('type')}
-                                            label="Tipo"
-                                        >
-                                            <MenuItem value="email">E-mail</MenuItem>
-                                            <MenuItem value="sms">SMS</MenuItem>
-                                            <MenuItem value="whatsapp">WhatsApp</MenuItem>
-                                        </Select>
-                                    </FormControl>
-                                </Grid>
-
-                                <Grid item xs={12} md={6}>
-                                    <FormControl fullWidth>
-                                        <InputLabel>Tipo de Destinatário</InputLabel>
-                                        <Select
-                                            value={formData.recipient_type}
-                                            onChange={handleSelectChange('recipient_type')}
-                                            label="Tipo de Destinatário"
-                                        >
-                                            <MenuItem value="member">Membro</MenuItem>
-                                            <MenuItem value="family">Família</MenuItem>
-                                            <MenuItem value="group">Grupo</MenuItem>
-                                        </Select>
-                                    </FormControl>
-                                </Grid>
-
-                                <Grid item xs={12}>
-                                    <Autocomplete
-                                        value={selectedRecipient}
-                                        onChange={(event, newValue) => setSelectedRecipient(newValue)}
-                                        options={recipients}
-                                        getOptionLabel={(option) => option.name}
-                                        loading={loadingRecipients}
-                                        renderInput={(params) => (
-                                            <TextField
-                                                {...params}
-                                                label={getRecipientTypeLabel()}
-                                                InputProps={{
-                                                    ...params.InputProps,
-                                                    endAdornment: (
-                                                        <>
-                                                            {loadingRecipients ? <CircularProgress color="inherit" size={20} /> : null}
-                                                            {params.InputProps.endAdornment}
-                                                        </>
-                                                    ),
-                                                }}
-                                            />
-                                        )}
-                                    />
-                                </Grid>
-
-                                <Grid item xs={12}>
-                                    <TextField
-                                        fullWidth
-                                        label="Assunto"
-                                        value={formData.subject}
-                                        onChange={handleTextChange('subject')}
-                                    />
-                                </Grid>
-
-                                <Grid item xs={12}>
-                                    <TextField
-                                        fullWidth
-                                        label="Conteúdo"
-                                        value={formData.content}
-                                        onChange={handleTextChange('content')}
-                                        multiline
-                                        rows={4}
-                                    />
-                                </Grid>
-                            </Grid>
-
-                            <Box sx={{ mt: 3, display: 'flex', gap: 2 }}>
-                                <Button
-                                    type="submit"
-                                    variant="contained"
-                                    disabled={loading || !selectedRecipient}
-                                >
-                                    {loading ? <CircularProgress size={24} /> : 'Salvar'}
-                                </Button>
-                                <Button
-                                    variant="outlined"
-                                    onClick={() => navigate('/communications')}
-                                    disabled={loading}
-                                >
-                                    Cancelar
-                                </Button>
-                            </Box>
-                        </CardContent>
-                    </Card>
-                </form>
-            </Box>
-        </Container>
+      <Container maxWidth="lg">
+        <Alert severity="warning" sx={{ mt: 4 }}>
+          Selecione uma comunidade para gerenciar comunicações
+        </Alert>
+      </Container>
     );
-};
+  }
 
-export default CommunicationForm; 
+  return (
+    <Container maxWidth="lg">
+      <Box sx={{ mt: 4, mb: 4 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Button
+              color="inherit"
+              startIcon={<ArrowBackIcon />}
+              onClick={() => navigate('/communications')}
+            >
+              Voltar
+            </Button>
+            <Typography variant="h4" component="h1">
+              {communicationId ? 'Editar Comunicação' : 'Nova Comunicação'}
+            </Typography>
+          </Box>
+          <Button
+            variant="contained"
+            color="primary"
+            startIcon={<SaveIcon />}
+            onClick={handleSubmit}
+            disabled={loading}
+          >
+            Salvar
+          </Button>
+        </Box>
+
+        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+        {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
+
+        <Card>
+          <CardContent>
+            <form onSubmit={handleSubmit}>
+              <Grid container spacing={3}>
+                <Grid item xs={12} md={4}>
+                  <FormControl fullWidth>
+                    <InputLabel>Tipo</InputLabel>
+                    <Select
+                      name="type"
+                      value={formData.type}
+                      onChange={handleSelectChange}
+                      label="Tipo"
+                    >
+                      <MenuItem value="email">E-mail</MenuItem>
+                      <MenuItem value="sms">SMS</MenuItem>
+                      <MenuItem value="whatsapp">WhatsApp</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+
+                <Grid item xs={12} md={8}>
+                  <TextField
+                    fullWidth
+                    label="Título"
+                    name="title"
+                    value={formData.title}
+                    onChange={handleTextChange}
+                    required
+                  />
+                </Grid>
+
+                <Grid item xs={12} md={4}>
+                  <FormControl fullWidth>
+                    <InputLabel>Tipo de Destinatário</InputLabel>
+                    <Select
+                      name="recipient_type"
+                      value={formData.recipient_type}
+                      onChange={handleSelectChange}
+                      label="Tipo de Destinatário"
+                    >
+                      <MenuItem value="member">Membro</MenuItem>
+                      <MenuItem value="family">Família</MenuItem>
+                      <MenuItem value="group">Grupo</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+
+                <Grid item xs={12} md={8}>
+                  <FormControl fullWidth>
+                    <InputLabel>{formData.recipient_type === 'member' ? 'Membro' : formData.recipient_type === 'family' ? 'Família' : 'Grupo'}</InputLabel>
+                    <Select
+                      name="recipient_id"
+                      value={formData.recipient_id}
+                      onChange={handleSelectChange}
+                      label={formData.recipient_type === 'member' ? 'Membro' : formData.recipient_type === 'family' ? 'Família' : 'Grupo'}
+                    >
+                      {formData.recipient_type === 'member' && members.map(member => (
+                        <MenuItem key={member.id} value={member.id}>
+                          {member.name}
+                        </MenuItem>
+                      ))}
+                      {formData.recipient_type === 'family' && families.map(family => (
+                        <MenuItem key={family.id} value={family.id}>
+                          {family.name}
+                        </MenuItem>
+                      ))}
+                      {formData.recipient_type === 'group' && groups.map(group => (
+                        <MenuItem key={group.id} value={group.id}>
+                          {group.name}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="Assunto"
+                    name="subject"
+                    value={formData.subject}
+                    onChange={handleTextChange}
+                    required
+                  />
+                </Grid>
+
+                <Grid item xs={12}>
+                  <Box sx={{ mt: 2 }}>
+                    <Typography variant="subtitle1" gutterBottom>
+                      Conteúdo
+                    </Typography>
+                    <CKEditor
+                      editor={ClassicEditor}
+                      config={CKEDITOR_CONFIG}
+                      data={formData.content}
+                      onReady={(editor: Editor) => {
+                        editorRef.current = editor;
+                        setEditorReady(true);
+                      }}
+                      onChange={(_event: any, editor: Editor) => {
+                        const data = editor.getData();
+                        setEditorContent(data);
+                      }}
+                      onError={(error: Error, { phase }: { phase: string }) => {
+                        console.error(`CKEditor error (${phase}):`, error);
+                      }}
+                    />
+                  </Box>
+                </Grid>
+              </Grid>
+            </form>
+          </CardContent>
+        </Card>
+      </Box>
+    </Container>
+  );
+} 

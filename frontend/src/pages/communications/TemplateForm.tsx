@@ -18,6 +18,9 @@ import {
 import { useCommunity } from '../../contexts/CommunityContext';
 import { CommunicationService } from '../../services/communication';
 import { CreateTemplateRequest } from '../../types/communication';
+import { CKEditor } from '@ckeditor/ckeditor5-react';
+import ClassicEditor from '@ckeditor/ckeditor5-build-classic';
+import { CKEDITOR_CONFIG, DEFAULT_TEMPLATE, generateCommunicationTemplate } from '../../config/communicationEditor';
 
 const TemplateForm: FC = () => {
     const navigate = useNavigate();
@@ -35,6 +38,11 @@ const TemplateForm: FC = () => {
     useEffect(() => {
         if (templateId && activeCommunity) {
             loadTemplate();
+        } else if (activeCommunity) {
+            setFormData(prev => ({
+                ...prev,
+                content: generateCommunicationTemplate(activeCommunity)
+            }));
         }
     }, [templateId, activeCommunity]);
 
@@ -49,7 +57,7 @@ const TemplateForm: FC = () => {
                 name: data.name,
                 type: data.type,
                 subject: data.subject,
-                content: data.content
+                content: data.content || generateCommunicationTemplate(activeCommunity)
             });
         } catch (err: any) {
             console.error('Erro ao carregar template:', err);
@@ -66,10 +74,19 @@ const TemplateForm: FC = () => {
         setLoading(true);
         setError(null);
         try {
+            let processedContent = generateCommunicationTemplate(activeCommunity);
+            processedContent = processedContent.replace('[ASSUNTO]', formData.subject);
+            processedContent = processedContent.replace('[CONTEUDO]', formData.content);
+
+            const dataToSubmit = {
+                ...formData,
+                content: processedContent
+            };
+
             if (templateId) {
-                await CommunicationService.updateTemplate(activeCommunity.id, templateId, formData);
+                await CommunicationService.updateTemplate(activeCommunity.id, templateId, dataToSubmit);
             } else {
-                await CommunicationService.createTemplate(activeCommunity.id, formData);
+                await CommunicationService.createTemplate(activeCommunity.id, dataToSubmit);
             }
             navigate('/communications/templates');
         } catch (err: any) {
@@ -150,14 +167,17 @@ const TemplateForm: FC = () => {
                             </Grid>
 
                             <Grid item xs={12}>
-                                <TextField
-                                    fullWidth
-                                    label="Conteúdo"
-                                    value={formData.content}
-                                    onChange={handleTextChange('content')}
-                                    multiline
-                                    rows={8}
-                                />
+                                <Box sx={{ border: '1px solid #ccc', borderRadius: 1 }}>
+                                    <CKEditor
+                                        editor={ClassicEditor}
+                                        config={CKEDITOR_CONFIG}
+                                        data={formData.content}
+                                        onChange={(event, editor) => {
+                                            const data = editor.getData();
+                                            setFormData(prev => ({ ...prev, content: data }));
+                                        }}
+                                    />
+                                </Box>
                             </Grid>
                         </Grid>
 
