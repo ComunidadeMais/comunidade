@@ -9,34 +9,85 @@ interface CustomEditorConfig extends EditorConfig {
   };
 }
 
-export const DEFAULT_TEMPLATE = `<div style="max-width: 800px; margin: 0 auto; padding: 20px;">
-  <div class="community-logo" style="text-align: center; margin-bottom: 20px;">
-    <img src="[LOGO_URL]" alt="Logo da Comunidade" style="max-width: 200px;">
-    <h3 style="color: #666; margin-top: 10px;">[COMUNIDADE_NOME]</h3>
+export const DEFAULT_TEMPLATE = `<div style="max-width: 800px; margin: 0 auto; padding: 40px 20px; background-color: #F9F9F9; font-family: Arial, sans-serif;">
+  <!-- Cabeçalho -->
+  <div style="text-align: center; margin-bottom: 40px; padding: 30px; background: linear-gradient(135deg, #4A90E2, #2C82C9); border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+    <img src="[LOGO_URL]" alt="Logo da Comunidade" style="max-width: 180px; margin-bottom: 20px;">
+    <h2 style="color: #FFFFFF; margin: 0; font-size: 24px; font-weight: 600;">[COMUNIDADE_NOME]</h2>
   </div>
   
-  <h1 style="text-align: center; color: #333;">[TITULO]</h1>
-  
-  <div style="text-align: center; margin: 20px 0;">
-    <img src="[IMAGEM_URL]" alt="Imagem do Evento" style="max-width: 100%; border-radius: 8px;">
+  <!-- Título do Evento -->
+  <div style="text-align: center; margin-bottom: 40px;">
+    <h1 style="color: #333333; font-size: 32px; font-weight: 700; margin: 0;">[TITULO]</h1>
   </div>
   
-  <div style="background-color: #f5f5f5; padding: 15px; border-radius: 8px; margin: 20px 0;">
-    <h3 style="color: #444; margin: 0 0 10px 0;">Data e Horário</h3>
-    <p style="margin: 5px 0;"><strong>Início:</strong> [DATA_INICIO]</p>
-    <p style="margin: 5px 0;"><strong>Término:</strong> [DATA_FIM]</p>
-    <p style="margin: 5px 0;"><strong>Local:</strong> [LOCAL]</p>
+  <!-- Imagem do Evento -->
+  <div style="margin: 30px 0; text-align: center;">
+    <img src="[IMAGEM_URL]" alt="Imagem do Evento" style="max-width: 100%; border-radius: 12px; box-shadow: 0 8px 16px rgba(0,0,0,0.1);">
   </div>
   
-  <div style="margin: 20px 0;">
-    <h3 style="color: #444; margin: 0 0 10px 0;">Descrição do Evento</h3>
-    <p style="line-height: 1.6;">[DESCRICAO]</p>
+  <!-- Informações do Evento -->
+  <div style="background-color: #FFFFFF; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 30px;">
+    <h3 style="color: #4A90E2; margin: 0 0 20px 0; font-size: 20px; font-weight: 600;">Detalhes do Evento</h3>
+    
+    <div style="display: flex; margin-bottom: 15px; align-items: center;">
+      <div style="min-width: 120px;">
+        <strong style="color: #333333;">Início:</strong>
+      </div>
+      <div style="color: #757575;">[DATA_INICIO]</div>
+    </div>
+    
+    <div style="display: flex; margin-bottom: 15px; align-items: center;">
+      <div style="min-width: 120px;">
+        <strong style="color: #333333;">Término:</strong>
+      </div>
+      <div style="color: #757575;">[DATA_FIM]</div>
+    </div>
+    
+    <div style="display: flex; margin-bottom: 15px; align-items: center;">
+      <div style="min-width: 120px;">
+        <strong style="color: #333333;">Local:</strong>
+      </div>
+      <div style="color: #757575;">[LOCAL]</div>
+    </div>
   </div>
   
-  <div style="background-color: #f5f5f5; padding: 15px; border-radius: 8px; margin: 20px 0;">
-    <h3 style="color: #444; margin: 0 0 10px 0;">Responsável pelo Evento</h3>
-    <p style="margin: 5px 0;"><strong>Nome:</strong> [RESPONSAVEL_NOME]</p>
-    <p style="margin: 5px 0;"><strong>Contato:</strong> [RESPONSAVEL_EMAIL]</p>
+  <!-- Descrição -->
+  <div style="background-color: #FFFFFF; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 30px;">
+    <h3 style="color: #4A90E2; margin: 0 0 20px 0; font-size: 20px; font-weight: 600;">Sobre o Evento</h3>
+    <p style="color: #757575; line-height: 1.6; margin: 0;">[DESCRICAO]</p>
+  </div>
+  
+  <!-- Responsável -->
+  <div style="background-color: #FFFFFF; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+    <h3 style="color: #4A90E2; margin: 0 0 20px 0; font-size: 20px; font-weight: 600;">Responsável pelo Evento</h3>
+    
+    <div style="display: flex; margin-bottom: 15px; align-items: center;">
+      <div style="min-width: 120px;">
+        <strong style="color: #333333;">Nome:</strong>
+      </div>
+      <div style="color: #757575;">[RESPONSAVEL_NOME]</div>
+    </div>
+    
+    <div style="display: flex; align-items: center;">
+      <div style="min-width: 120px;">
+        <strong style="color: #333333;">Contato:</strong>
+      </div>
+      <div>
+        <a href="mailto:[RESPONSAVEL_EMAIL]" style="color: #2C82C9; text-decoration: none;">[RESPONSAVEL_EMAIL]</a>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Rodapé -->
+  <div style="text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid #ECECEC;">
+    <p style="color: #757575; font-size: 14px; margin: 0 0 10px 0;">
+      Este é um evento oficial de [COMUNIDADE_NOME].<br>
+      Para mais informações, entre em contato conosco.
+    </p>
+    <p style="color: #757575; font-size: 12px; margin: 0;">
+      Criado por <a href="https://comunidademais.com.br" target="_blank" style="color: #4A90E2; text-decoration: none; font-weight: 600;">Comunidade+</a>
+    </p>
   </div>
 </div>`;
 
