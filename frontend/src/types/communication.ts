@@ -5,11 +5,13 @@ export type RecipientType = 'member' | 'group' | 'family' | 'custom';
 export interface Communication {
     id: string;
     type: CommunicationType;
+    title: string;
     subject: string;
     content: string;
+    status: CommunicationStatus;
     recipient_type: RecipientType;
     recipient_id: string;
-    status: CommunicationStatus;
+    image_url?: string;
     created_at: string;
     updated_at: string;
 }
@@ -42,11 +44,9 @@ export interface CommunicationSettings {
 }
 
 export interface CreateCommunicationRequest {
-    type: string;
-    subject: string;
+    title: string;
     content: string;
-    recipient_type: string;
-    recipient_id: string;
+    image_url?: string;
 }
 
 export interface CreateTemplateRequest {
@@ -54,4 +54,19 @@ export interface CreateTemplateRequest {
     type: CommunicationType;
     subject: string;
     content: string;
+}
+
+export interface UpdateCommunicationRequest {
+    title: string;
+    content: string;
+    image_url?: string;
+}
+
+export interface CommunicationResponse {
+    communication: Communication;
+}
+
+export interface ListCommunicationsResponse {
+    communications: Communication[];
+    total: number;
 } 
