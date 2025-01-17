@@ -68,21 +68,24 @@ const menuItems: MenuItem[] = [
     path: '/members',
     icon: <MembersIcon />,
     description: 'Gerenciar membros da comunidade',
-    section: 'Gestão'
-  },
-  {
-    text: 'Famílias',
-    path: '/families',
-    icon: <FamilyIcon />,
-    description: 'Gerenciar famílias da comunidade',
-    section: 'Gestão'
-  },
-  {
-    text: 'Grupos',
-    path: '/groups',
-    icon: <GroupsIcon />,
-    description: 'Organizar grupos e subgrupos',
-    section: 'Gestão'
+    section: 'Gestão',
+    subItems: [
+      {
+        text: 'Lista de Membros',
+        path: '/members',
+        description: 'Visualizar e gerenciar membros'
+      },
+      {
+        text: 'Famílias',
+        path: '/families',
+        description: 'Gerenciar famílias da comunidade'
+      },
+      {
+        text: 'Grupos',
+        path: '/groups',
+        description: 'Organizar grupos e subgrupos'
+      }
+    ]
   },
   {
     text: 'Eventos',
