@@ -31,6 +31,85 @@ import { useCommunity } from '../../contexts/CommunityContext';
 import { QRCodeSVG } from 'qrcode.react';
 import DeleteIcon from '@mui/icons-material/Delete';
 import SearchIcon from '@mui/icons-material/Search';
+import PrintIcon from '@mui/icons-material/Print';
+
+// Componente para impressão do QR Code
+const PrintableQRCode: React.FC<{ url: string, eventName: string }> = ({ url, eventName }) => {
+  return (
+    <div style={{ display: 'none' }}>
+      <div id="printable-qrcode" style={{ 
+        width: '210mm', 
+        height: '297mm', 
+        padding: '20mm',
+        margin: '0 auto',
+        boxSizing: 'border-box',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        backgroundColor: 'white'
+      }}>
+        <div style={{
+          maxWidth: '170mm',
+          width: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '10mm'
+        }}>
+          <h1 style={{ 
+            fontSize: '24pt', 
+            textAlign: 'center', 
+            margin: 0,
+            color: '#333'
+          }}>
+            Check-in do Evento
+          </h1>
+          <h2 style={{ 
+            fontSize: '20pt', 
+            textAlign: 'center', 
+            margin: 0,
+            color: '#666'
+          }}>
+            {eventName}
+          </h2>
+          <div style={{ 
+            width: '150mm', 
+            height: '150mm',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            backgroundColor: 'white',
+            padding: '10mm',
+            boxShadow: '0 0 10mm rgba(0,0,0,0.1)',
+            borderRadius: '5mm',
+            margin: '10mm 0'
+          }}>
+            <QRCodeSVG value={url} size={567} /> {/* 150mm em pixels (150 * 3.78) */}
+          </div>
+          <p style={{ 
+            fontSize: '14pt', 
+            textAlign: 'center',
+            margin: '5mm 0',
+            maxWidth: '150mm',
+            wordBreak: 'break-all',
+            color: '#444'
+          }}>
+            {url}
+          </p>
+          <p style={{ 
+            fontSize: '12pt',
+            textAlign: 'center',
+            margin: '5mm 0',
+            color: '#666',
+            fontStyle: 'italic'
+          }}>
+            Escaneie este QR Code para realizar o check-in no evento
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export const CheckIn: React.FC = () => {
   const { eventId } = useParams<{ eventId: string }>();
@@ -43,11 +122,28 @@ export const CheckIn: React.FC = () => {
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
   const [familyMembers, setFamilyMembers] = useState<Member[]>([]);
   const [selectedFamilyMembers, setSelectedFamilyMembers] = useState<Member[]>([]);
+  const [eventName, setEventName] = useState<string>('');
 
   const { control, handleSubmit, reset, watch } = useForm<CheckInRequest>();
 
   // Gera a URL de check-in do evento
   const checkInUrl = `${window.location.origin}/events/${eventId}/checkin`;
+
+  // Função para buscar o nome do evento
+  useEffect(() => {
+    const fetchEventName = async () => {
+      try {
+        const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8080/api/v1'}/events/${eventId}/public`);
+        const data = await response.json();
+        setEventName(data.event?.name || 'Evento');
+      } catch (err) {
+        console.error('Erro ao buscar nome do evento:', err);
+      }
+    };
+    if (eventId) {
+      fetchEventName();
+    }
+  }, [eventId]);
 
   const searchMember = async () => {
     if (!eventId || !searchTerm) return;
@@ -130,6 +226,39 @@ export const CheckIn: React.FC = () => {
         return [...prev, member];
       }
     });
+  };
+
+  // Função para imprimir o QR Code
+  const handlePrintQRCode = () => {
+    const printContent = document.getElementById('printable-qrcode')?.innerHTML;
+    if (printContent) {
+      const printWindow = window.open('', '_blank');
+      if (printWindow) {
+        printWindow.document.write(`
+          <html>
+            <head>
+              <title>QR Code - ${eventName}</title>
+              <style>
+                @page {
+                  size: A4;
+                  margin: 0;
+                }
+                body {
+                  margin: 0;
+                }
+              </style>
+            </head>
+            <body>${printContent}</body>
+          </html>
+        `);
+        printWindow.document.close();
+        printWindow.focus();
+        setTimeout(() => {
+          printWindow.print();
+          printWindow.close();
+        }, 250);
+      }
+    }
   };
 
   return (
@@ -368,9 +497,18 @@ export const CheckIn: React.FC = () => {
           <Grid item xs={12} md={6}>
             <Card>
               <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  QR Code para Check-in
-                </Typography>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                  <Typography variant="h6">
+                    QR Code para Check-in
+                  </Typography>
+                  <Button
+                    variant="outlined"
+                    startIcon={<PrintIcon />}
+                    onClick={handlePrintQRCode}
+                  >
+                    Imprimir QR Code
+                  </Button>
+                </Box>
                 <Box sx={{ display: 'flex', justifyContent: 'center', my: 2 }}>
                   <QRCodeSVG value={checkInUrl} size={200} />
                 </Box>
@@ -382,6 +520,9 @@ export const CheckIn: React.FC = () => {
                 </Typography>
               </CardContent>
             </Card>
+
+            {/* Componente oculto para impressão */}
+            <PrintableQRCode url={checkInUrl} eventName={eventName} />
           </Grid>
         </Grid>
       </Box>
