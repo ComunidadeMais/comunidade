@@ -7,6 +7,7 @@ func InitMemberRoutes(router *gin.RouterGroup, h RouteHandler) {
 	{
 		members.POST("", h.AddMember)
 		members.GET("", h.ListMembers)
+		members.GET("/search", h.SearchMember)
 		members.GET("/:memberId", h.GetMember)
 		members.PUT("/:memberId", h.UpdateMember)
 		members.DELETE("/:memberId", h.RemoveMember)

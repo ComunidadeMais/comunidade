@@ -29,6 +29,8 @@ import {
   Search as SearchIcon,
   Visibility as VisibilityIcon,
   Person as PersonIcon,
+  QrCode2 as QrCode2Icon,
+  Assessment as AssessmentIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { EventService } from '../../services/event';
@@ -87,10 +89,13 @@ export function Events() {
     setLoading(true);
     setError(null);
     try {
+      console.log('Carregando eventos para comunidade:', activeCommunity);
       const data = await EventService.listEvents(activeCommunity.id);
+      console.log('Dados recebidos da API:', data);
       
       if (users?.length > 0) {
         const eventsWithResponsibles: EventWithResponsible[] = data.map(event => {
+          console.log('Processando evento:', event);
           const responsible = users.find(user => user.id === event.responsible_id);
           return {
             ...event,
@@ -101,14 +106,17 @@ export function Events() {
             } : undefined
           };
         });
+        console.log('Eventos processados:', eventsWithResponsibles);
         setEvents(Array.isArray(eventsWithResponsibles) ? eventsWithResponsibles : []);
       } else {
+        console.log('Nenhum usuário encontrado, definindo eventos sem responsáveis');
         setEvents(Array.isArray(data) ? data.map(event => ({
           ...event,
           responsible: undefined
         })) : []);
       }
     } catch (err: any) {
+      console.error('Erro ao carregar eventos:', err);
       setError(err.response?.data?.message || 'Erro ao carregar eventos');
       setEvents([]);
     } finally {
@@ -341,30 +349,82 @@ export function Events() {
                             )}
                           </TableCell>
                           <TableCell align="right">
-                            <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
+                            <Box>
                               <Tooltip title="Visualizar">
-                                <IconButton
+                                <IconButton 
+                                  onClick={() => {
+                                    console.log('Navegando para visualizar evento:', event);
+                                    if (!event?.id) {
+                                      console.error('ID do evento não encontrado:', event);
+                                      return;
+                                    }
+                                    navigate(`/events/${event.id}/view`);
+                                  }} 
                                   size="small"
-                                  onClick={() => window.open(`/events/${event.id}/view`, '_blank')}
-                                  color="info"
                                 >
                                   <VisibilityIcon />
                                 </IconButton>
                               </Tooltip>
-                              <Tooltip title="Editar">
-                                <IconButton
+                              <Tooltip title="Check-in">
+                                <IconButton 
+                                  onClick={() => {
+                                    console.log('Navegando para check-in do evento:', event);
+                                    if (!event?.id) {
+                                      console.error('ID do evento não encontrado:', event);
+                                      return;
+                                    }
+                                    const eventId = event.id.toString();
+                                    console.log('ID do evento para check-in:', eventId);
+                                    navigate(`/events/${eventId}/checkin`);
+                                  }} 
                                   size="small"
-                                  onClick={() => navigate(`/events/${event.id}/edit`)}
-                                  color="primary"
+                                >
+                                  <QrCode2Icon />
+                                </IconButton>
+                              </Tooltip>
+                              <Tooltip title="Dashboard">
+                                <IconButton 
+                                  onClick={() => {
+                                    console.log('Navegando para dashboard do evento:', event);
+                                    if (!event?.id) {
+                                      console.error('ID do evento não encontrado:', event);
+                                      return;
+                                    }
+                                    const eventId = event.id.toString();
+                                    console.log('ID do evento para dashboard:', eventId);
+                                    navigate(`/events/${eventId}/checkin/dashboard`);
+                                  }} 
+                                  size="small"
+                                >
+                                  <AssessmentIcon />
+                                </IconButton>
+                              </Tooltip>
+                              <Tooltip title="Editar">
+                                <IconButton 
+                                  onClick={() => {
+                                    console.log('Navegando para editar evento:', event);
+                                    if (!event?.id) {
+                                      console.error('ID do evento não encontrado:', event);
+                                      return;
+                                    }
+                                    navigate(`/events/${event.id}/edit`);
+                                  }} 
+                                  size="small"
                                 >
                                   <EditIcon />
                                 </IconButton>
                               </Tooltip>
                               <Tooltip title="Excluir">
-                                <IconButton
+                                <IconButton 
+                                  onClick={() => {
+                                    console.log('Excluindo evento:', event);
+                                    if (!event?.id) {
+                                      console.error('ID do evento não encontrado:', event);
+                                      return;
+                                    }
+                                    handleDelete(event.id);
+                                  }} 
                                   size="small"
-                                  onClick={() => handleDelete(event.id)}
-                                  color="error"
                                 >
                                   <DeleteIcon />
                                 </IconButton>

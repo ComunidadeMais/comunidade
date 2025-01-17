@@ -15,6 +15,7 @@ type MemberRepository interface {
 	Delete(ctx context.Context, communityID, memberID string) error
 	FindByID(ctx context.Context, communityID, memberID string) (*domain.Member, error)
 	FindByEmail(ctx context.Context, communityID, email string) (*domain.Member, error)
+	FindByEmailOrPhone(ctx context.Context, communityID, search string) (*domain.Member, error)
 	List(ctx context.Context, communityID string, filter *Filter) ([]*domain.Member, int64, error)
 }
 
@@ -70,6 +71,19 @@ func (r *memberRepository) FindByEmail(ctx context.Context, communityID, email s
 	var member domain.Member
 	if err := r.GetDB().WithContext(ctx).
 		Where("community_id = ? AND email = ?", communityID, email).
+		First(&member).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &member, nil
+}
+
+func (r *memberRepository) FindByEmailOrPhone(ctx context.Context, communityID, search string) (*domain.Member, error) {
+	var member domain.Member
+	if err := r.GetDB().WithContext(ctx).
+		Where("community_id = ? AND (email = ? OR phone = ?)", communityID, search, search).
 		First(&member).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, nil

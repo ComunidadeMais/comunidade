@@ -26,6 +26,7 @@
     "@mui/material": "^6.3.1",
     "@mui/x-date-pickers": "^7.23.6",
     "@types/lodash": "^4.17.14",
+    "@types/qrcode.react": "^3.0.0",
     "@types/react-bootstrap": "^0.32.37",
     "axios": "^1.7.9",
     "date-fns": "^4.1.0",

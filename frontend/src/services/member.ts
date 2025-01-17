@@ -21,6 +21,10 @@ interface ListMembersParams {
   search?: string;
 }
 
+interface FamilyResponse {
+  family_members: Member[];
+}
+
 export const MemberService = {
   async listMembers(communityId: string, params?: ListMembersParams) {
     const response = await api.get<MemberResponse>(`/communities/${communityId}/members`, {
@@ -78,5 +82,17 @@ export const MemberService = {
     );
 
     return response.data.photo;
+  },
+
+  findByEmailOrPhone: async (communityId: string, searchTerm: string): Promise<SingleMemberResponse> => {
+    const response = await api.get<SingleMemberResponse>(`/communities/${communityId}/members/search`, {
+      params: { search: searchTerm }
+    });
+    return response.data;
+  },
+
+  getMemberFamily: async (communityId: string, memberId: string): Promise<FamilyResponse> => {
+    const response = await api.get<FamilyResponse>(`/communities/${communityId}/members/${memberId}/family`);
+    return response.data;
   }
 }; 

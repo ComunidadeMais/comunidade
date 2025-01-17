@@ -1,7 +1,9 @@
 {
   "dependencies": {
+    "@types/qrcode.react": "^3.0.0",
     "axios": "^1.7.9",
-    "date-fns": "^4.1.0"
+    "date-fns": "^4.1.0",
+    "qrcode.react": "^4.2.0"
   },
   "devDependencies": {
     "@types/date-fns": "^2.6.3"

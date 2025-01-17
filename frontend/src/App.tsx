@@ -34,6 +34,8 @@ import Templates from './pages/communications/Templates';
 import TemplateForm from './pages/communications/TemplateForm';
 import { UsersProvider } from './contexts/UsersContext';
 import { EventView } from './pages/Events/EventView';
+import { CheckIn } from './pages/events/CheckIn';
+import { CheckInDashboard } from './pages/events/CheckInDashboard';
 
 // Componente para proteger rotas
 const PrivateRoute: FC<{ element: React.ReactElement }> = ({ element }) => {
@@ -80,6 +82,8 @@ const App: FC = () => {
                   <Route path="/events/calendar" element={<PrivateRoute element={<Calendar />} />} />
                   <Route path="/events/new" element={<PrivateRoute element={<EventForm />} />} />
                   <Route path="/events/:eventId/edit" element={<PrivateRoute element={<EventForm />} />} />
+                  <Route path="/events/:eventId/checkin" element={<PrivateRoute element={<CheckIn />} />} />
+                  <Route path="/events/:eventId/checkin/dashboard" element={<PrivateRoute element={<CheckInDashboard />} />} />
                   <Route path="/settings" element={<PrivateRoute element={<Settings />} />} />
                   <Route path="/settings/communication" element={<PrivateRoute element={<CommunicationSettings />} />} />
                   <Route path="/profile" element={<PrivateRoute element={<Profile />} />} />

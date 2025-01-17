@@ -260,6 +260,13 @@ func (h *Handler) AddMember(c *gin.Context) {
 }
 
 func (h *Handler) ListMembers(c *gin.Context) {
+	// Obtém o usuário do contexto
+	user, exists := c.Get("user")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Token inválido"})
+		return
+	}
+
 	communityID := c.Param("communityId")
 
 	// Verifica se a comunidade existe
@@ -271,6 +278,12 @@ func (h *Handler) ListMembers(c *gin.Context) {
 	}
 	if community == nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Comunidade não encontrada"})
+		return
+	}
+
+	// Verifica se o usuário tem permissão para listar membros
+	if community.CreatedBy != user.(*domain.User).ID {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Você não tem permissão para listar membros"})
 		return
 	}
 
@@ -626,17 +639,74 @@ func (h *Handler) GetMemberFamily(c *gin.Context) {
 		return
 	}
 
-	// Busca a família do membro
-	familyMember, err := h.repos.Family.FindByMemberID(context.Background(), memberID)
+	// Busca os membros da família com detalhes completos
+	familyMembers, err := h.repos.Family.ListFamilyMembersWithDetails(context.Background(), communityID, memberID)
 	if err != nil {
 		h.logger.Error("erro ao buscar família do membro", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro interno do servidor"})
 		return
 	}
-	if familyMember == nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Membro não pertence a nenhuma família"})
+
+	if familyMembers == nil {
+		c.JSON(http.StatusOK, gin.H{
+			"family_members": []interface{}{},
+		})
 		return
 	}
 
-	c.JSON(http.StatusOK, familyMember)
+	c.JSON(http.StatusOK, gin.H{
+		"family_members": familyMembers,
+	})
+}
+
+func (h *Handler) SearchMember(c *gin.Context) {
+	// Obtém o usuário do contexto
+	user, exists := c.Get("user")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Token inválido"})
+		return
+	}
+
+	communityID := c.Param("communityId")
+	search := c.Query("search")
+
+	if search == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Parâmetro de busca é obrigatório"})
+		return
+	}
+
+	// Verifica se a comunidade existe
+	community, err := h.repos.Community.FindByID(context.Background(), communityID)
+	if err != nil {
+		h.logger.Error("erro ao buscar comunidade", zap.Error(err))
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro interno do servidor"})
+		return
+	}
+	if community == nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Comunidade não encontrada"})
+		return
+	}
+
+	// Verifica se o usuário tem permissão para buscar membros
+	if community.CreatedBy != user.(*domain.User).ID {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Você não tem permissão para buscar membros"})
+		return
+	}
+
+	// Busca o membro por email ou telefone
+	member, err := h.repos.Member.FindByEmailOrPhone(context.Background(), communityID, search)
+	if err != nil {
+		h.logger.Error("erro ao buscar membro", zap.Error(err))
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro interno do servidor"})
+		return
+	}
+
+	if member == nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Membro não encontrado"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"member": member,
+	})
 }

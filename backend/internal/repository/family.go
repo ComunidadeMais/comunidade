@@ -16,6 +16,7 @@ type FamilyRepository interface {
 	FindByID(ctx context.Context, communityID, familyID string) (*domain.Family, error)
 	ListByCommunity(ctx context.Context, communityID string) ([]*domain.Family, error)
 	ListFamilyMembers(ctx context.Context, familyID string) ([]*domain.FamilyMember, error)
+	ListFamilyMembersWithDetails(ctx context.Context, communityID, memberID string) ([]*domain.Member, error)
 	Update(ctx context.Context, family *domain.Family) error
 	Delete(ctx context.Context, communityID, familyID string) error
 	RemoveMember(ctx context.Context, familyID, memberID string) error
@@ -90,6 +91,33 @@ func (r *familyRepository) ListFamilyMembers(ctx context.Context, familyID strin
 	if err != nil {
 		return nil, err
 	}
+	return members, nil
+}
+
+// ListFamilyMembersWithDetails lista todos os membros da família com detalhes completos
+func (r *familyRepository) ListFamilyMembersWithDetails(ctx context.Context, communityID, memberID string) ([]*domain.Member, error) {
+	// Primeiro, encontra a família do membro
+	var familyMember domain.FamilyMember
+	if err := r.db.WithContext(ctx).
+		Where("member_id = ?", memberID).
+		First(&familyMember).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	// Depois, busca todos os membros da família exceto o próprio membro
+	var members []*domain.Member
+	err := r.db.WithContext(ctx).
+		Joins("JOIN family_members ON family_members.member_id = members.id").
+		Where("family_members.family_id = ? AND members.id != ? AND members.community_id = ?",
+			familyMember.FamilyID, memberID, communityID).
+		Find(&members).Error
+	if err != nil {
+		return nil, err
+	}
+
 	return members, nil
 }
 

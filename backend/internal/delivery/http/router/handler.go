@@ -30,6 +30,7 @@ type RouteHandler interface {
 	// Member
 	AddMember(c *gin.Context)
 	ListMembers(c *gin.Context)
+	SearchMember(c *gin.Context)
 	GetMember(c *gin.Context)
 	UpdateMember(c *gin.Context)
 	RemoveMember(c *gin.Context)
@@ -85,4 +86,9 @@ type RouteHandler interface {
 	CreateCommunicationSettings(c *gin.Context)
 	UpdateCommunicationSettings(c *gin.Context)
 	TestEmail(c *gin.Context)
+
+	// Check-in
+	CreateCheckIn(c *gin.Context)
+	GetEventCheckIns(c *gin.Context)
+	GetEventStats(c *gin.Context)
 }
