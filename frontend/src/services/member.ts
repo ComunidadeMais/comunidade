@@ -1,4 +1,5 @@
 import api from './api';
+import publicApi from './publicApi';
 import { Member } from '../types/member';
 
 interface MemberResponse {
@@ -84,15 +85,15 @@ export const MemberService = {
     return response.data.photo;
   },
 
-  findByEmailOrPhone: async (communityId: string, searchTerm: string): Promise<SingleMemberResponse> => {
-    const response = await api.get<SingleMemberResponse>(`/communities/${communityId}/members/search`, {
+  findByEmailOrPhone: async (eventId: string, searchTerm: string): Promise<SingleMemberResponse> => {
+    const response = await publicApi.get<SingleMemberResponse>(`/events/${eventId}/members/search`, {
       params: { search: searchTerm }
     });
     return response.data;
   },
 
-  getMemberFamily: async (communityId: string, memberId: string): Promise<FamilyResponse> => {
-    const response = await api.get<FamilyResponse>(`/communities/${communityId}/members/${memberId}/family`);
+  getMemberFamily: async (eventId: string, memberId: string): Promise<FamilyResponse> => {
+    const response = await publicApi.get<FamilyResponse>(`/events/${eventId}/members/${memberId}/family`);
     return response.data;
   }
 }; 

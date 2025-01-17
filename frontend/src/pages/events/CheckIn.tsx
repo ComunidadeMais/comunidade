@@ -28,7 +28,7 @@ import checkInService from '../../services/checkin';
 import { Member } from '../../types/member';
 import { MemberService } from '../../services/member';
 import { useCommunity } from '../../contexts/CommunityContext';
-import QrCode2Icon from '@mui/icons-material/QrCode2';
+import { QRCodeSVG } from 'qrcode.react';
 import DeleteIcon from '@mui/icons-material/Delete';
 import SearchIcon from '@mui/icons-material/Search';
 
@@ -46,21 +46,24 @@ export const CheckIn: React.FC = () => {
 
   const { control, handleSubmit, reset, watch } = useForm<CheckInRequest>();
 
+  // Gera a URL de check-in do evento
+  const checkInUrl = `${window.location.origin}/events/${eventId}/checkin`;
+
   const searchMember = async () => {
-    if (!activeCommunity || !searchTerm) return;
+    if (!eventId || !searchTerm) return;
 
     try {
       setLoading(true);
       setError(null);
       console.log('Buscando membro:', searchTerm);
-      const response = await MemberService.findByEmailOrPhone(activeCommunity.id, searchTerm);
+      const response = await MemberService.findByEmailOrPhone(eventId, searchTerm);
       console.log('Resposta da busca:', response);
       
       if (response.member) {
         setSelectedMember(response.member);
         // Buscar família do membro
         if (response.member.id) {
-          const familyResponse = await MemberService.getMemberFamily(activeCommunity.id, response.member.id);
+          const familyResponse = await MemberService.getMemberFamily(eventId, response.member.id);
           console.log('Família do membro:', familyResponse);
           if (familyResponse.family_members) {
             setFamilyMembers(familyResponse.family_members.filter(fm => fm.id !== response.member.id));
@@ -369,10 +372,13 @@ export const CheckIn: React.FC = () => {
                   QR Code para Check-in
                 </Typography>
                 <Box sx={{ display: 'flex', justifyContent: 'center', my: 2 }}>
-                  <QrCode2Icon sx={{ fontSize: 200 }} />
+                  <QRCodeSVG value={checkInUrl} size={200} />
                 </Box>
                 <Typography variant="body2" color="text.secondary" align="center">
                   Escaneie este QR Code para realizar o check-in no evento
+                </Typography>
+                <Typography variant="body2" color="text.secondary" align="center" sx={{ mt: 1 }}>
+                  {checkInUrl}
                 </Typography>
               </CardContent>
             </Card>

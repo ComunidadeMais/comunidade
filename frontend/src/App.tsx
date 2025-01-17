@@ -59,6 +59,7 @@ const App: FC = () => {
           <Route path="/register" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/events/:eventId/view" element={<EventView />} />
+          <Route path="/events/:eventId/checkin" element={<CheckIn />} />
 
           {/* Rotas protegidas */}
           <Route path="/*" element={
@@ -82,7 +83,6 @@ const App: FC = () => {
                   <Route path="/events/calendar" element={<PrivateRoute element={<Calendar />} />} />
                   <Route path="/events/new" element={<PrivateRoute element={<EventForm />} />} />
                   <Route path="/events/:eventId/edit" element={<PrivateRoute element={<EventForm />} />} />
-                  <Route path="/events/:eventId/checkin" element={<PrivateRoute element={<CheckIn />} />} />
                   <Route path="/events/:eventId/checkin/dashboard" element={<PrivateRoute element={<CheckInDashboard />} />} />
                   <Route path="/settings" element={<PrivateRoute element={<Settings />} />} />
                   <Route path="/settings/communication" element={<PrivateRoute element={<CommunicationSettings />} />} />

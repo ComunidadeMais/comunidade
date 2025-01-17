@@ -624,11 +624,23 @@ func (h *Handler) UploadMemberPhoto(c *gin.Context) {
 
 // GetMemberFamily retorna a família do membro
 func (h *Handler) GetMemberFamily(c *gin.Context) {
-	communityID := c.Param("communityId")
+	eventID := c.Param("eventId")
 	memberID := c.Param("memberId")
 
+	// Primeiro busca o evento para obter o communityID
+	event, err := h.repos.Event.FindPublicByID(context.Background(), eventID)
+	if err != nil {
+		h.logger.Error("erro ao buscar evento", zap.Error(err))
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro interno do servidor"})
+		return
+	}
+	if event == nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Evento não encontrado"})
+		return
+	}
+
 	// Verifica se o membro existe
-	member, err := h.repos.Member.FindByID(context.Background(), communityID, memberID)
+	member, err := h.repos.Member.FindByID(context.Background(), event.CommunityID, memberID)
 	if err != nil {
 		h.logger.Error("erro ao buscar membro", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro interno do servidor"})
@@ -640,7 +652,7 @@ func (h *Handler) GetMemberFamily(c *gin.Context) {
 	}
 
 	// Busca os membros da família com detalhes completos
-	familyMembers, err := h.repos.Family.ListFamilyMembersWithDetails(context.Background(), communityID, memberID)
+	familyMembers, err := h.repos.Family.ListFamilyMembersWithDetails(context.Background(), event.CommunityID, memberID)
 	if err != nil {
 		h.logger.Error("erro ao buscar família do membro", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro interno do servidor"})
@@ -660,14 +672,7 @@ func (h *Handler) GetMemberFamily(c *gin.Context) {
 }
 
 func (h *Handler) SearchMember(c *gin.Context) {
-	// Obtém o usuário do contexto
-	user, exists := c.Get("user")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Token inválido"})
-		return
-	}
-
-	communityID := c.Param("communityId")
+	eventID := c.Param("eventId")
 	search := c.Query("search")
 
 	if search == "" {
@@ -675,26 +680,20 @@ func (h *Handler) SearchMember(c *gin.Context) {
 		return
 	}
 
-	// Verifica se a comunidade existe
-	community, err := h.repos.Community.FindByID(context.Background(), communityID)
+	// Primeiro busca o evento para obter o communityID
+	event, err := h.repos.Event.FindPublicByID(context.Background(), eventID)
 	if err != nil {
-		h.logger.Error("erro ao buscar comunidade", zap.Error(err))
+		h.logger.Error("erro ao buscar evento", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro interno do servidor"})
 		return
 	}
-	if community == nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Comunidade não encontrada"})
+	if event == nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Evento não encontrado"})
 		return
 	}
 
-	// Verifica se o usuário tem permissão para buscar membros
-	if community.CreatedBy != user.(*domain.User).ID {
-		c.JSON(http.StatusForbidden, gin.H{"error": "Você não tem permissão para buscar membros"})
-		return
-	}
-
-	// Busca o membro por email ou telefone
-	member, err := h.repos.Member.FindByEmailOrPhone(context.Background(), communityID, search)
+	// Busca o membro por email ou telefone usando o communityID do evento
+	member, err := h.repos.Member.FindByEmailOrPhone(context.Background(), event.CommunityID, search)
 	if err != nil {
 		h.logger.Error("erro ao buscar membro", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro interno do servidor"})
