@@ -6,27 +6,35 @@ import (
 )
 
 type Repositories struct {
-	db            *gorm.DB
-	User          UserRepository
-	Community     CommunityRepository
-	Member        MemberRepository
-	Family        FamilyRepository
-	Group         GroupRepository
-	Event         EventRepository
-	CheckIn       CheckInRepository
-	Communication CommunicationRepository
+	User              UserRepository
+	Community         CommunityRepository
+	Member            MemberRepository
+	Group             GroupRepository
+	Event             EventRepository
+	Family            FamilyRepository
+	Communication     CommunicationRepository
+	CheckIn           CheckInRepository
+	FinancialCategory FinancialCategoryRepository
+	Supplier          SupplierRepository
+	Expense           ExpenseRepository
+	Revenue           RevenueRepository
+	FinancialReport   FinancialReportRepository
 }
 
 func NewRepositories(db *gorm.DB, logger *zap.Logger) *Repositories {
 	return &Repositories{
-		db:            db,
-		User:          NewUserRepository(db, logger),
-		Community:     NewCommunityRepository(db, logger),
-		Member:        NewMemberRepository(db, logger),
-		Family:        NewFamilyRepository(db, logger),
-		Group:         NewGroupRepository(db, logger),
-		Event:         NewEventRepository(db, logger),
-		CheckIn:       NewCheckInRepository(db, logger),
-		Communication: NewCommunicationRepository(db, logger),
+		User:              NewUserRepository(db, logger),
+		Community:         NewCommunityRepository(db, logger),
+		Member:            NewMemberRepository(db, logger),
+		Group:             NewGroupRepository(db, logger),
+		Event:             NewEventRepository(db, logger),
+		Family:            NewFamilyRepository(db, logger),
+		Communication:     NewCommunicationRepository(db, logger),
+		CheckIn:           NewCheckInRepository(db, logger),
+		FinancialCategory: NewFinancialCategoryRepository(db, logger),
+		Supplier:          NewSupplierRepository(db, logger),
+		Expense:           NewExpenseRepository(db, logger),
+		Revenue:           NewRevenueRepository(db, logger),
+		FinancialReport:   NewFinancialReportRepository(db, logger),
 	}
 }

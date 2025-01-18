@@ -91,4 +91,16 @@ type RouteHandler interface {
 	CreateCheckIn(c *gin.Context)
 	GetEventCheckIns(c *gin.Context)
 	GetEventStats(c *gin.Context)
+
+	// Financeiro
+	AddFinancialCategory(c *gin.Context)
+	ListFinancialCategories(c *gin.Context)
+	AddSupplier(c *gin.Context)
+	ListSuppliers(c *gin.Context)
+	AddExpense(c *gin.Context)
+	ListExpenses(c *gin.Context)
+	AddRevenue(c *gin.Context)
+	ListRevenues(c *gin.Context)
+	GenerateFinancialReport(c *gin.Context)
+	ListFinancialReports(c *gin.Context)
 }
