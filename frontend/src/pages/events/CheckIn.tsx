@@ -32,6 +32,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import DeleteIcon from '@mui/icons-material/Delete';
 import SearchIcon from '@mui/icons-material/Search';
 import PrintIcon from '@mui/icons-material/Print';
+import { useTheme } from '@mui/material/styles';
 
 // Componente para impressão do QR Code
 const PrintableQRCode: React.FC<{ url: string, eventName: string }> = ({ url, eventName }) => {
@@ -123,8 +124,12 @@ export const CheckIn: React.FC = () => {
   const [familyMembers, setFamilyMembers] = useState<Member[]>([]);
   const [selectedFamilyMembers, setSelectedFamilyMembers] = useState<Member[]>([]);
   const [eventName, setEventName] = useState<string>('');
+  const [eventTitle, setEventTitle] = useState<string>('');
+  const [eventDate, setEventDate] = useState<string>('');
 
   const { control, handleSubmit, reset, watch } = useForm<CheckInRequest>();
+
+  const theme = useTheme();
 
   // Gera a URL de check-in do evento
   const checkInUrl = `${window.location.origin}/events/${eventId}/checkin`;
@@ -135,7 +140,22 @@ export const CheckIn: React.FC = () => {
       try {
         const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8080/api/v1'}/events/${eventId}/public`);
         const data = await response.json();
-        setEventName(data.event?.name || 'Evento');
+        if (data.event) {
+          setEventName(data.event.name || 'Evento');
+          setEventTitle(data.event.title || 'Check-in do Evento');
+          // Formata a data do evento
+          if (data.event.start_date) {
+            const date = new Date(data.event.start_date);
+            setEventDate(date.toLocaleDateString('pt-BR', {
+              weekday: 'long',
+              day: 'numeric',
+              month: 'long',
+              year: 'numeric',
+              hour: 'numeric',
+              minute: 'numeric'
+            }));
+          }
+        }
       } catch (err) {
         console.error('Erro ao buscar nome do evento:', err);
       }
@@ -262,16 +282,91 @@ export const CheckIn: React.FC = () => {
   };
 
   return (
-    <Container maxWidth="md">
-      <Box sx={{ mt: 4, mb: 4 }}>
-        <Typography variant="h4" component="h1" gutterBottom>
-          Check-in do Evento
+    <Container maxWidth="lg">
+      {/* Header */}
+      <Box 
+        sx={{ 
+          mt: 4, 
+          mb: 6,
+          textAlign: 'center',
+          position: 'relative',
+          '&::after': {
+            content: '""',
+            position: 'absolute',
+            bottom: '-16px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            width: '100px',
+            height: '4px',
+            backgroundColor: theme.palette.primary.main,
+            borderRadius: '2px'
+          }
+        }}
+      >
+        <Typography 
+          variant="h4" 
+          component="div" 
+          gutterBottom
+          sx={{ 
+            color: theme.palette.text.secondary,
+            mb: 2
+          }}
+        >
+          Evento
         </Typography>
+        <Typography 
+          variant="h3" 
+          component="h1" 
+          gutterBottom
+          sx={{ 
+            fontWeight: 'bold',
+            color: theme.palette.primary.main,
+            mb: 2
+          }}
+        >
+          {eventTitle}
+        </Typography>
+        <Typography 
+          variant="h6" 
+          sx={{ 
+            color: theme.palette.text.secondary,
+            maxWidth: '600px',
+            margin: '0 auto',
+            mb: 2
+          }}
+        >
+          Este é um evento oficial de {activeCommunity?.name || 'Comunidade Hugo'}
+        </Typography>
+        {eventDate && (
+          <Typography 
+            variant="h6" 
+            sx={{ 
+              color: theme.palette.primary.main,
+              fontWeight: 500,
+              maxWidth: '600px',
+              margin: '0 auto',
+              textTransform: 'capitalize'
+            }}
+          >
+            {eventDate}
+          </Typography>
+        )}
+      </Box>
 
-        <Grid container spacing={3}>
-          <Grid item xs={12} md={6}>
-            <Paper sx={{ p: 3 }}>
-              <form onSubmit={handleSubmit(onSubmit)}>
+      <Grid container spacing={4}>
+        {/* Formulário de Check-in */}
+        <Grid item xs={12} md={7}>
+          <Paper 
+            elevation={0}
+            sx={{ 
+              p: 4,
+              borderRadius: 2,
+              border: `1px solid ${theme.palette.divider}`,
+              backgroundColor: theme.palette.background.paper
+            }}
+          >
+            <form onSubmit={handleSubmit(onSubmit)}>
+              <Box sx={{ mb: 4 }}>
                 <FormControlLabel
                   control={
                     <Checkbox
@@ -282,250 +377,372 @@ export const CheckIn: React.FC = () => {
                         setFamilyMembers([]);
                         setSelectedFamilyMembers([]);
                       }}
+                      sx={{ 
+                        color: theme.palette.primary.main,
+                        '&.Mui-checked': {
+                          color: theme.palette.primary.main,
+                        }
+                      }}
                     />
                   }
-                  label="Sou visitante"
+                  label={
+                    <Typography variant="subtitle1" sx={{ fontWeight: 500 }}>
+                      Sou visitante
+                    </Typography>
+                  }
                 />
+              </Box>
 
-                {!isVisitor && (
-                  <Box sx={{ mb: 2 }}>
-                    <Typography variant="subtitle1" gutterBottom>
-                      Buscar membro por e-mail ou telefone
-                    </Typography>
-                    <Box sx={{ display: 'flex', gap: 1 }}>
-                      <TextField
-                        fullWidth
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        placeholder="Digite o e-mail ou telefone"
-                      />
-                      <Button
-                        variant="contained"
-                        onClick={searchMember}
-                        disabled={loading}
-                        startIcon={<SearchIcon />}
-                      >
-                        Buscar
-                      </Button>
-                    </Box>
-                  </Box>
-                )}
-
-                {selectedMember && (
-                  <Box sx={{ mb: 2 }}>
-                    <Typography variant="subtitle1" gutterBottom>
-                      Membro Encontrado
-                    </Typography>
-                    <Card variant="outlined">
-                      <CardContent>
-                        <Typography variant="h6">{selectedMember.name}</Typography>
-                        <Typography color="textSecondary">{selectedMember.email}</Typography>
-                        <Typography color="textSecondary">{selectedMember.phone}</Typography>
-                      </CardContent>
-                    </Card>
-                  </Box>
-                )}
-
-                {familyMembers.length > 0 && (
-                  <Box sx={{ mb: 2 }}>
-                    <Typography variant="subtitle1" gutterBottom>
-                      Membros da Família
-                    </Typography>
-                    <List>
-                      {familyMembers.map((member) => (
-                        <ListItem key={member.id}>
-                          <ListItemText
-                            primary={member.name}
-                            secondary={`${member.email} - ${member.phone}`}
-                          />
-                          <ListItemSecondaryAction>
-                            <Checkbox
-                              edge="end"
-                              onChange={() => handleFamilyMemberToggle(member)}
-                              checked={selectedFamilyMembers.some(m => m.id === member.id)}
-                            />
-                          </ListItemSecondaryAction>
-                        </ListItem>
-                      ))}
-                    </List>
-                  </Box>
-                )}
-
-                {(isVisitor || !selectedMember) && (
-                  <>
-                    <Controller
-                      name="name"
-                      control={control}
-                      defaultValue=""
-                      rules={{ required: true }}
-                      render={({ field }) => (
-                        <TextField
-                          {...field}
-                          label="Nome completo"
-                          margin="normal"
-                          fullWidth
-                          required
-                        />
-                      )}
-                    />
-
-                    <Controller
-                      name="email"
-                      control={control}
-                      defaultValue=""
-                      rules={{ required: true, pattern: /^\S+@\S+$/i }}
-                      render={({ field }) => (
-                        <TextField
-                          {...field}
-                          label="E-mail"
-                          type="email"
-                          margin="normal"
-                          fullWidth
-                          required
-                        />
-                      )}
-                    />
-
-                    <Controller
-                      name="phone"
-                      control={control}
-                      defaultValue=""
-                      rules={{ required: true }}
-                      render={({ field }) => (
-                        <TextField
-                          {...field}
-                          label="Telefone"
-                          margin="normal"
-                          fullWidth
-                          required
-                        />
-                      )}
-                    />
-                  </>
-                )}
-
-                {isVisitor && (
-                  <>
-                    <Controller
-                      name="city"
-                      control={control}
-                      defaultValue=""
-                      render={({ field }) => (
-                        <TextField
-                          {...field}
-                          label="Cidade"
-                          margin="normal"
-                          fullWidth
-                        />
-                      )}
-                    />
-
-                    <Controller
-                      name="district"
-                      control={control}
-                      defaultValue=""
-                      render={({ field }) => (
-                        <TextField
-                          {...field}
-                          label="Bairro"
-                          margin="normal"
-                          fullWidth
-                        />
-                      )}
-                    />
-
-                    <Controller
-                      name="source"
-                      control={control}
-                      defaultValue=""
-                      render={({ field }) => (
-                        <TextField
-                          {...field}
-                          label="Como ficou sabendo do evento?"
-                          margin="normal"
-                          fullWidth
-                        />
-                      )}
-                    />
-                  </>
-                )}
-
-                <Controller
-                  name="consent"
-                  control={control}
-                  defaultValue={false}
-                  rules={{ required: true }}
-                  render={({ field }) => (
-                    <FormControlLabel
-                      control={
-                        <Checkbox
-                          {...field}
-                          checked={field.value}
-                        />
-                      }
-                      label="Concordo com o uso dos meus dados para fins de registro e comunicação"
-                    />
-                  )}
-                />
-
-                {error && (
-                  <Alert severity="error" sx={{ mt: 2 }}>
-                    {error}
-                  </Alert>
-                )}
-
-                {success && (
-                  <Alert severity="success" sx={{ mt: 2 }}>
-                    Check-in realizado com sucesso!
-                  </Alert>
-                )}
-
-                <Button
-                  type="submit"
-                  variant="contained"
-                  color="primary"
-                  fullWidth
-                  sx={{ mt: 3 }}
-                  disabled={loading}
-                >
-                  {loading ? <CircularProgress size={24} /> : 'Realizar Check-in'}
-                </Button>
-              </form>
-            </Paper>
-          </Grid>
-
-          <Grid item xs={12} md={6}>
-            <Card>
-              <CardContent>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                  <Typography variant="h6">
-                    QR Code para Check-in
+              {!isVisitor && (
+                <Box sx={{ mb: 4 }}>
+                  <Typography variant="h6" gutterBottom sx={{ color: theme.palette.text.primary }}>
+                    Buscar membro
                   </Typography>
-                  <Button
+                  <Box sx={{ display: 'flex', gap: 1 }}>
+                    <TextField
+                      fullWidth
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      placeholder="Digite o e-mail ou telefone"
+                      variant="outlined"
+                      sx={{ 
+                        '& .MuiOutlinedInput-root': {
+                          '&:hover fieldset': {
+                            borderColor: theme.palette.primary.main,
+                          }
+                        }
+                      }}
+                    />
+                    <Button
+                      variant="contained"
+                      onClick={searchMember}
+                      disabled={loading}
+                      startIcon={<SearchIcon />}
+                      sx={{ 
+                        minWidth: '120px',
+                        backgroundColor: theme.palette.primary.main,
+                        '&:hover': {
+                          backgroundColor: theme.palette.primary.dark,
+                        }
+                      }}
+                    >
+                      Buscar
+                    </Button>
+                  </Box>
+                </Box>
+              )}
+
+              {selectedMember && (
+                <Box sx={{ mb: 4 }}>
+                  <Typography variant="h6" gutterBottom sx={{ color: theme.palette.text.primary }}>
+                    Membro Encontrado
+                  </Typography>
+                  <Card 
                     variant="outlined"
-                    startIcon={<PrintIcon />}
-                    onClick={handlePrintQRCode}
+                    sx={{ 
+                      borderRadius: 2,
+                      borderColor: theme.palette.primary.main,
+                      backgroundColor: theme.palette.background.paper
+                    }}
                   >
-                    Imprimir QR Code
-                  </Button>
+                    <CardContent>
+                      <Typography variant="h6" sx={{ color: theme.palette.primary.main }}>
+                        {selectedMember.name}
+                      </Typography>
+                      <Typography color="textSecondary">{selectedMember.email}</Typography>
+                      <Typography color="textSecondary">{selectedMember.phone}</Typography>
+                    </CardContent>
+                  </Card>
                 </Box>
-                <Box sx={{ display: 'flex', justifyContent: 'center', my: 2 }}>
-                  <QRCodeSVG value={checkInUrl} size={200} />
+              )}
+
+              {familyMembers.length > 0 && (
+                <Box sx={{ mb: 4 }}>
+                  <Typography variant="h6" gutterBottom sx={{ color: theme.palette.text.primary }}>
+                    Membros da Família
+                  </Typography>
+                  <List>
+                    {familyMembers.map((member) => (
+                      <ListItem key={member.id}>
+                        <ListItemText
+                          primary={member.name}
+                          secondary={`${member.email} - ${member.phone}`}
+                        />
+                        <ListItemSecondaryAction>
+                          <Checkbox
+                            edge="end"
+                            onChange={() => handleFamilyMemberToggle(member)}
+                            checked={selectedFamilyMembers.some(m => m.id === member.id)}
+                          />
+                        </ListItemSecondaryAction>
+                      </ListItem>
+                    ))}
+                  </List>
                 </Box>
-                <Typography variant="body2" color="text.secondary" align="center">
+              )}
+
+              {(isVisitor || !selectedMember) && (
+                <>
+                  <Controller
+                    name="name"
+                    control={control}
+                    defaultValue=""
+                    rules={{ required: true }}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        label="Nome completo"
+                        margin="normal"
+                        fullWidth
+                        required
+                      />
+                    )}
+                  />
+
+                  <Controller
+                    name="email"
+                    control={control}
+                    defaultValue=""
+                    rules={{ required: true, pattern: /^\S+@\S+$/i }}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        label="E-mail"
+                        type="email"
+                        margin="normal"
+                        fullWidth
+                        required
+                      />
+                    )}
+                  />
+
+                  <Controller
+                    name="phone"
+                    control={control}
+                    defaultValue=""
+                    rules={{ required: true }}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        label="Telefone"
+                        margin="normal"
+                        fullWidth
+                        required
+                      />
+                    )}
+                  />
+                </>
+              )}
+
+              {isVisitor && (
+                <>
+                  <Controller
+                    name="city"
+                    control={control}
+                    defaultValue=""
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        label="Cidade"
+                        margin="normal"
+                        fullWidth
+                      />
+                    )}
+                  />
+
+                  <Controller
+                    name="district"
+                    control={control}
+                    defaultValue=""
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        label="Bairro"
+                        margin="normal"
+                        fullWidth
+                      />
+                    )}
+                  />
+
+                  <Controller
+                    name="source"
+                    control={control}
+                    defaultValue=""
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        label="Como ficou sabendo do evento?"
+                        margin="normal"
+                        fullWidth
+                      />
+                    )}
+                  />
+                </>
+              )}
+
+              <Controller
+                name="consent"
+                control={control}
+                defaultValue={false}
+                rules={{ required: true }}
+                render={({ field }) => (
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        {...field}
+                        checked={field.value}
+                      />
+                    }
+                    label="Concordo com o uso dos meus dados para fins de registro e comunicação"
+                  />
+                )}
+              />
+
+              {error && (
+                <Alert severity="error" sx={{ mt: 2 }}>
+                  {error}
+                </Alert>
+              )}
+
+              {success && (
+                <Alert severity="success" sx={{ mt: 2 }}>
+                  Check-in realizado com sucesso!
+                </Alert>
+              )}
+
+              <Button
+                type="submit"
+                variant="contained"
+                fullWidth
+                size="large"
+                sx={{ 
+                  mt: 4,
+                  py: 1.5,
+                  backgroundColor: theme.palette.primary.main,
+                  '&:hover': {
+                    backgroundColor: theme.palette.primary.dark,
+                  }
+                }}
+                disabled={loading}
+              >
+                {loading ? <CircularProgress size={24} /> : 'Realizar Check-in'}
+              </Button>
+            </form>
+          </Paper>
+        </Grid>
+
+        {/* QR Code */}
+        <Grid item xs={12} md={5}>
+          <Card 
+            elevation={0}
+            sx={{ 
+              borderRadius: 2,
+              border: `1px solid ${theme.palette.divider}`,
+              height: '100%'
+            }}
+          >
+            <CardContent sx={{ p: 4 }}>
+              <Box sx={{ 
+                display: 'flex', 
+                justifyContent: 'space-between', 
+                alignItems: 'center', 
+                mb: 4 
+              }}>
+                <Typography variant="h6" sx={{ color: theme.palette.primary.main }}>
+                  QR Code para Check-in
+                </Typography>
+                <Button
+                  variant="outlined"
+                  startIcon={<PrintIcon />}
+                  onClick={handlePrintQRCode}
+                  sx={{ 
+                    borderColor: theme.palette.primary.main,
+                    color: theme.palette.primary.main,
+                    '&:hover': {
+                      borderColor: theme.palette.primary.dark,
+                      backgroundColor: 'rgba(0, 0, 0, 0.04)'
+                    }
+                  }}
+                >
+                  Imprimir
+                </Button>
+              </Box>
+              
+              <Box sx={{ 
+                display: 'flex', 
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: 3,
+                p: 3,
+                backgroundColor: '#fff',
+                borderRadius: 2,
+                boxShadow: '0 0 20px rgba(0,0,0,0.05)'
+              }}>
+                <QRCodeSVG value={checkInUrl} size={250} />
+                <Typography variant="body1" color="textSecondary" align="center">
                   Escaneie este QR Code para realizar o check-in no evento
                 </Typography>
-                <Typography variant="body2" color="text.secondary" align="center" sx={{ mt: 1 }}>
+                <Typography 
+                  variant="body2" 
+                  sx={{ 
+                    color: theme.palette.text.secondary,
+                    wordBreak: 'break-all',
+                    textAlign: 'center'
+                  }}
+                >
                   {checkInUrl}
                 </Typography>
-              </CardContent>
-            </Card>
-
-            {/* Componente oculto para impressão */}
-            <PrintableQRCode url={checkInUrl} eventName={eventName} />
-          </Grid>
+              </Box>
+            </CardContent>
+          </Card>
         </Grid>
+      </Grid>
+
+      {/* Footer */}
+      <Box sx={{ 
+        mt: 8, 
+        pt: 4,
+        borderTop: `2px solid ${theme.palette.divider}`,
+        textAlign: 'center',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 2
+      }}>
+        <Typography variant="body1" sx={{ color: theme.palette.text.secondary }}>
+          Para mais informações, entre em contato conosco.
+        </Typography>
+        <Typography 
+          variant="body2" 
+          sx={{ 
+            color: theme.palette.text.secondary,
+            fontStyle: 'italic',
+            fontWeight: 500
+          }}
+        >
+          Criado por{' '}
+          <Button
+            component="a"
+            href="/"
+            sx={{ 
+              color: theme.palette.primary.main,
+              p: 0,
+              minWidth: 'auto',
+              fontStyle: 'italic',
+              fontWeight: 500,
+              textTransform: 'none',
+              '&:hover': {
+                backgroundColor: 'transparent',
+                textDecoration: 'underline'
+              }
+            }}
+          >
+            Comunidade+
+          </Button>
+        </Typography>
       </Box>
+
+      {/* Componente oculto para impressão */}
+      <PrintableQRCode url={checkInUrl} eventName={eventName} />
     </Container>
   );
 }; 
