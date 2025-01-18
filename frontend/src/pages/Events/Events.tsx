@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   Box,
   Button,
@@ -21,6 +21,13 @@ import {
   InputAdornment,
   CircularProgress,
   Avatar,
+  Checkbox,
+  Menu,
+  MenuItem,
+  SpeedDial,
+  SpeedDialAction,
+  SpeedDialIcon,
+  Snackbar,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -31,6 +38,10 @@ import {
   Person as PersonIcon,
   QrCode2 as QrCode2Icon,
   Assessment as AssessmentIcon,
+  FilterList as FilterListIcon,
+  Print as PrintIcon,
+  Download as DownloadIcon,
+  MoreVert as MoreVertIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { EventService } from '../../services/event';
@@ -51,6 +62,13 @@ export function Events() {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [selectedEvents, setSelectedEvents] = useState<string[]>([]);
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [snackbar, setSnackbar] = useState<{open: boolean, message: string, severity: 'success' | 'error'}>({
+    open: false,
+    message: '',
+    severity: 'success'
+  });
 
   useEffect(() => {
     if (activeCommunity) {
@@ -217,6 +235,49 @@ export function Events() {
     }
   };
 
+  const handleSelectAll = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.checked) {
+      setSelectedEvents(filteredEvents.map(event => event.id));
+    } else {
+      setSelectedEvents([]);
+    }
+  };
+
+  const handleSelectEvent = (eventId: string) => {
+    setSelectedEvents(prev => {
+      if (prev.includes(eventId)) {
+        return prev.filter(id => id !== eventId);
+      } else {
+        return [...prev, eventId];
+      }
+    });
+  };
+
+  const handleBatchDelete = async () => {
+    if (!window.confirm(`Tem certeza que deseja excluir ${selectedEvents.length} eventos?`)) {
+      return;
+    }
+
+    try {
+      await Promise.all(selectedEvents.map(eventId => 
+        EventService.deleteEvent(activeCommunity!.id, eventId)
+      ));
+      await loadEvents();
+      setSelectedEvents([]);
+      setSnackbar({
+        open: true,
+        message: 'Eventos excluídos com sucesso',
+        severity: 'success'
+      });
+    } catch (err: any) {
+      setSnackbar({
+        open: true,
+        message: 'Erro ao excluir eventos',
+        severity: 'error'
+      });
+    }
+  };
+
   if (!activeCommunity) {
     return (
       <Container maxWidth="lg">
@@ -234,21 +295,35 @@ export function Events() {
           <Typography variant="h4" component="h1">
             Eventos
           </Typography>
-          <Button
-            variant="contained"
-            color="primary"
-            startIcon={<AddIcon />}
-            onClick={() => navigate('/events/new')}
-          >
-            Novo Evento
-          </Button>
+          <Box sx={{ display: 'flex', gap: 2 }}>
+            <Tooltip title="Criar novo evento">
+              <Button
+                variant="contained"
+                color="primary"
+                startIcon={<AddIcon />}
+                onClick={() => navigate('/events/new')}
+              >
+                Novo Evento
+              </Button>
+            </Tooltip>
+            {selectedEvents.length > 0 && (
+              <Button
+                variant="outlined"
+                color="error"
+                startIcon={<DeleteIcon />}
+                onClick={handleBatchDelete}
+              >
+                Excluir Selecionados ({selectedEvents.length})
+              </Button>
+            )}
+          </Box>
         </Box>
 
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
         <Card>
           <CardContent>
-            <Box sx={{ mb: 3 }}>
+            <Box sx={{ mb: 3, display: 'flex', gap: 2 }}>
               <TextField
                 fullWidth
                 variant="outlined"
@@ -263,12 +338,22 @@ export function Events() {
                   ),
                 }}
               />
+              <IconButton onClick={(e) => setAnchorEl(e.currentTarget)}>
+                <FilterListIcon />
+              </IconButton>
             </Box>
 
             <TableContainer>
               <Table>
                 <TableHead>
                   <TableRow>
+                    <TableCell padding="checkbox">
+                      <Checkbox
+                        checked={selectedEvents.length === filteredEvents.length}
+                        indeterminate={selectedEvents.length > 0 && selectedEvents.length < filteredEvents.length}
+                        onChange={handleSelectAll}
+                      />
+                    </TableCell>
                     <TableCell>Imagem</TableCell>
                     <TableCell>Título</TableCell>
                     <TableCell>Local</TableCell>
@@ -283,13 +368,13 @@ export function Events() {
                 <TableBody>
                   {loading ? (
                     <TableRow>
-                      <TableCell colSpan={9} align="center" sx={{ py: 3 }}>
+                      <TableCell colSpan={10} align="center" sx={{ py: 3 }}>
                         <CircularProgress />
                       </TableCell>
                     </TableRow>
                   ) : filteredEvents.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={9} align="center">
+                      <TableCell colSpan={10} align="center">
                         Nenhum evento encontrado
                       </TableCell>
                     </TableRow>
@@ -297,7 +382,23 @@ export function Events() {
                     filteredEvents
                       .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                       .map((event) => (
-                        <TableRow key={event.id}>
+                        <TableRow 
+                          key={event.id}
+                          hover
+                          selected={selectedEvents.includes(event.id)}
+                          onClick={() => handleSelectEvent(event.id)}
+                          sx={{ cursor: 'pointer' }}
+                        >
+                          <TableCell padding="checkbox">
+                            <Checkbox
+                              checked={selectedEvents.includes(event.id)}
+                              onClick={(e) => e.stopPropagation()}
+                              onChange={(e) => {
+                                e.stopPropagation();
+                                handleSelectEvent(event.id);
+                              }}
+                            />
+                          </TableCell>
                           <TableCell>
                             {event.image_url ? (
                               <Avatar
@@ -348,83 +449,64 @@ export function Events() {
                               '-'
                             )}
                           </TableCell>
-                          <TableCell align="right">
-                            <Box>
-                              <Tooltip title="Visualizar">
+                          <TableCell align="right" onClick={(e) => e.stopPropagation()}>
+                            <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
+                              <Tooltip title="Visualizar detalhes">
                                 <IconButton 
-                                  onClick={() => {
-                                    console.log('Navegando para visualizar evento:', event);
-                                    if (!event?.id) {
-                                      console.error('ID do evento não encontrado:', event);
-                                      return;
-                                    }
+                                  onClick={(e) => {
+                                    e.stopPropagation();
                                     navigate(`/events/${event.id}/view`);
-                                  }} 
+                                  }}
                                   size="small"
+                                  color="primary"
                                 >
                                   <VisibilityIcon />
                                 </IconButton>
                               </Tooltip>
-                              <Tooltip title="Check-in">
+                              <Tooltip title="Realizar check-in">
                                 <IconButton 
-                                  onClick={() => {
-                                    console.log('Navegando para check-in do evento:', event);
-                                    if (!event?.id) {
-                                      console.error('ID do evento não encontrado:', event);
-                                      return;
-                                    }
-                                    const eventId = event.id.toString();
-                                    console.log('ID do evento para check-in:', eventId);
-                                    navigate(`/events/${eventId}/checkin`);
-                                  }} 
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    navigate(`/events/${event.id}/checkin`);
+                                  }}
                                   size="small"
+                                  color="secondary"
                                 >
                                   <QrCode2Icon />
                                 </IconButton>
                               </Tooltip>
-                              <Tooltip title="Dashboard">
+                              <Tooltip title="Ver dashboard">
                                 <IconButton 
-                                  onClick={() => {
-                                    console.log('Navegando para dashboard do evento:', event);
-                                    if (!event?.id) {
-                                      console.error('ID do evento não encontrado:', event);
-                                      return;
-                                    }
-                                    const eventId = event.id.toString();
-                                    console.log('ID do evento para dashboard:', eventId);
-                                    navigate(`/events/${eventId}/checkin/dashboard`);
-                                  }} 
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    navigate(`/events/${event.id}/checkin/dashboard`);
+                                  }}
                                   size="small"
+                                  color="info"
                                 >
                                   <AssessmentIcon />
                                 </IconButton>
                               </Tooltip>
-                              <Tooltip title="Editar">
+                              <Tooltip title="Editar evento">
                                 <IconButton 
-                                  onClick={() => {
-                                    console.log('Navegando para editar evento:', event);
-                                    if (!event?.id) {
-                                      console.error('ID do evento não encontrado:', event);
-                                      return;
-                                    }
+                                  onClick={(e) => {
+                                    e.stopPropagation();
                                     navigate(`/events/${event.id}/edit`);
-                                  }} 
+                                  }}
                                   size="small"
+                                  color="warning"
                                 >
                                   <EditIcon />
                                 </IconButton>
                               </Tooltip>
-                              <Tooltip title="Excluir">
+                              <Tooltip title="Excluir evento">
                                 <IconButton 
-                                  onClick={() => {
-                                    console.log('Excluindo evento:', event);
-                                    if (!event?.id) {
-                                      console.error('ID do evento não encontrado:', event);
-                                      return;
-                                    }
+                                  onClick={(e) => {
+                                    e.stopPropagation();
                                     handleDelete(event.id);
-                                  }} 
+                                  }}
                                   size="small"
+                                  color="error"
                                 >
                                   <DeleteIcon />
                                 </IconButton>
@@ -452,6 +534,49 @@ export function Events() {
           </CardContent>
         </Card>
       </Box>
+
+      <Menu
+        anchorEl={anchorEl}
+        open={Boolean(anchorEl)}
+        onClose={() => setAnchorEl(null)}
+      >
+        <MenuItem onClick={() => {
+          // Implementar exportação
+          setAnchorEl(null);
+        }}>
+          <DownloadIcon sx={{ mr: 1 }} /> Exportar Lista
+        </MenuItem>
+        <MenuItem onClick={() => {
+          // Implementar impressão
+          setAnchorEl(null);
+        }}>
+          <PrintIcon sx={{ mr: 1 }} /> Imprimir Lista
+        </MenuItem>
+      </Menu>
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={() => setSnackbar(prev => ({ ...prev, open: false }))}
+        message={snackbar.message}
+      />
+
+      <SpeedDial
+        ariaLabel="Ações rápidas"
+        sx={{ position: 'fixed', bottom: 16, right: 16 }}
+        icon={<SpeedDialIcon />}
+      >
+        <SpeedDialAction
+          icon={<AddIcon />}
+          tooltipTitle="Criar novo evento"
+          onClick={() => navigate('/events/new')}
+        />
+        <SpeedDialAction
+          icon={<FilterListIcon />}
+          tooltipTitle="Filtros"
+          onClick={(e) => setAnchorEl(e.currentTarget)}
+        />
+      </SpeedDial>
     </Container>
   );
 } 
