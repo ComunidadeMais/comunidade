@@ -31,6 +31,8 @@ import { Community } from '../../types/community';
 import { useCommunity } from '../../contexts/CommunityContext';
 import { formatCommunityType, formatCommunityStatus, getCommunityTypeColor } from '../../utils/formatters';
 
+const logoUrl = new URL('../../assets/Comunidade+.PNG', import.meta.url).href;
+
 interface NavbarProps {
   onMenuClick: () => void;
 }
@@ -100,9 +102,20 @@ const Navbar: FC<NavbarProps> = ({ onMenuClick }) => {
             <MenuIcon />
           </IconButton>
           
-          <Typography variant="h6" noWrap component="div">
-            Comunidade+
-          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <img 
+              src={logoUrl} 
+              alt="Logo Comunidade+" 
+              style={{ 
+                height: '32px',
+                width: 'auto',
+                marginRight: '8px'
+              }} 
+            />
+            <Typography variant="h6" noWrap component="div">
+              Comunidade+
+            </Typography>
+          </Box>
         </Box>
 
         <Box sx={{ 
