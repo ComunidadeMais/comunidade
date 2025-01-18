@@ -29,6 +29,11 @@ import {
   ExpandMore as ExpandMoreIcon,
   Event as EventIcon,
   Email as EmailIcon,
+  AccountBalance as FinanceIcon,
+  Category as CategoryIcon,
+  Receipt as ExpenseIcon,
+  Payments as RevenueIcon,
+  Assessment as ReportIcon,
 } from '@mui/icons-material';
 import Navbar from './Navbar';
 import { useCommunity } from '../../contexts/CommunityContext';
@@ -103,6 +108,35 @@ const menuItems: MenuItem[] = [
         text: 'Calendário',
         path: '/events/calendar',
         description: 'Visualizar eventos no calendário'
+      }
+    ]
+  },
+  {
+    text: 'Financeiro',
+    path: '/financial',
+    icon: <FinanceIcon />,
+    description: 'Gerenciar finanças da comunidade',
+    section: 'Gestão',
+    subItems: [
+      {
+        text: 'Categorias',
+        path: '/financial/categories',
+        description: 'Gerenciar categorias financeiras'
+      },
+      {
+        text: 'Despesas',
+        path: '/financial/expenses',
+        description: 'Registrar e gerenciar despesas'
+      },
+      {
+        text: 'Receitas',
+        path: '/financial/revenues',
+        description: 'Registrar e gerenciar receitas'
+      },
+      {
+        text: 'Relatórios',
+        path: '/financial/reports',
+        description: 'Visualizar relatórios financeiros'
       }
     ]
   },

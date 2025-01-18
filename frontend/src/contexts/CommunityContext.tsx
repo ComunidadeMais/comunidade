@@ -2,16 +2,30 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Community } from '../types/community';
 import { CommunityService } from '../services/community';
 
-interface CommunityContextData {
+export interface CommunityContextData {
   activeCommunity: Community | null;
   setActiveCommunity: (community: Community | null) => void;
   communities: Community[];
   loading: boolean;
   error: string | null;
   loadCommunities: () => Promise<void>;
+  selectedCommunity: {
+    id: string;
+    name: string;
+  } | null;
 }
 
-const CommunityContext = createContext<CommunityContextData>({} as CommunityContextData);
+const communityContextDefaultValues: CommunityContextData = {
+  activeCommunity: null,
+  setActiveCommunity: () => {},
+  communities: [],
+  loading: false,
+  error: null,
+  loadCommunities: async () => {},
+  selectedCommunity: null
+};
+
+export const CommunityContext = createContext<CommunityContextData>(communityContextDefaultValues);
 
 export const CommunityProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [activeCommunity, setActiveCommunity] = useState<Community | null>(null);
@@ -20,27 +34,16 @@ export const CommunityProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [error, setError] = useState<string | null>(null);
 
   const loadCommunities = async () => {
-    const token = localStorage.getItem('token');
-    if (!token) return;
-
-    setLoading(true);
-    setError(null);
     try {
-      const data = await CommunityService.listCommunities();
-      setCommunities(data);
-      
-      // Se não houver comunidade ativa e houver comunidades disponíveis,
-      // seleciona a primeira como ativa
-      if (!activeCommunity && data.length > 0) {
-        const savedCommunityId = localStorage.getItem('activeCommunityId');
-        const savedCommunity = savedCommunityId 
-          ? data.find(c => c.id === savedCommunityId)
-          : data[0];
-        setActiveCommunity(savedCommunity || data[0]);
+      setLoading(true);
+      const response = await CommunityService.listCommunities();
+      setCommunities(response);
+      if (response.length > 0 && !activeCommunity) {
+        setActiveCommunity(response[0]);
       }
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Erro ao carregar comunidades');
-      console.error('Erro ao carregar comunidades:', err);
+    } catch (error) {
+      setError('Erro ao carregar comunidades');
+      console.error('Erro ao carregar comunidades:', error);
     } finally {
       setLoading(false);
     }
@@ -55,16 +58,19 @@ export const CommunityProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
   }, [activeCommunity]);
 
+  const value = {
+    activeCommunity,
+    setActiveCommunity,
+    communities,
+    loading,
+    error,
+    loadCommunities,
+    selectedCommunity: activeCommunity
+  };
+
   return (
     <CommunityContext.Provider
-      value={{
-        activeCommunity,
-        setActiveCommunity,
-        communities,
-        loading,
-        error,
-        loadCommunities
-      }}
+      value={value}
     >
       {children}
     </CommunityContext.Provider>

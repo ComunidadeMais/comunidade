@@ -39,6 +39,8 @@ type ExpenseRepository interface {
 	List(ctx context.Context, communityID string, filter *Filter) ([]*domain.Expense, int64, error)
 	GetTotalByPeriod(ctx context.Context, communityID string, startDate, endDate time.Time) (float64, error)
 	GetTotalByCategory(ctx context.Context, communityID string, categoryID string, startDate, endDate time.Time) (float64, error)
+	CountByCategory(ctx context.Context, communityID, categoryID string) (int64, error)
+	CountBySupplier(ctx context.Context, communityID, supplierID string) (int64, error)
 }
 
 // RevenueRepository interface
@@ -51,6 +53,7 @@ type RevenueRepository interface {
 	List(ctx context.Context, communityID string, filter *Filter) ([]*domain.Revenue, int64, error)
 	GetTotalByPeriod(ctx context.Context, communityID string, startDate, endDate time.Time) (float64, error)
 	GetTotalByCategory(ctx context.Context, communityID string, categoryID string, startDate, endDate time.Time) (float64, error)
+	CountByCategory(ctx context.Context, communityID, categoryID string) (int64, error)
 }
 
 // FinancialReportRepository interface
@@ -319,6 +322,36 @@ func (r *expenseRepository) GetTotalByCategory(ctx context.Context, communityID 
 	return total, err
 }
 
+func (r *expenseRepository) CountByCategory(ctx context.Context, communityID, categoryID string) (int64, error) {
+	var count int64
+	err := r.db.WithContext(ctx).Model(&domain.Expense{}).
+		Where("community_id = ? AND category_id = ?", communityID, categoryID).
+		Count(&count).Error
+	if err != nil {
+		r.logger.Error("erro ao contar despesas por categoria",
+			zap.Error(err),
+			zap.String("community_id", communityID),
+			zap.String("category_id", categoryID))
+		return 0, err
+	}
+	return count, nil
+}
+
+func (r *expenseRepository) CountBySupplier(ctx context.Context, communityID, supplierID string) (int64, error) {
+	var count int64
+	err := r.db.WithContext(ctx).Model(&domain.Expense{}).
+		Where("community_id = ? AND supplier_id = ?", communityID, supplierID).
+		Count(&count).Error
+	if err != nil {
+		r.logger.Error("erro ao contar despesas por fornecedor",
+			zap.Error(err),
+			zap.String("community_id", communityID),
+			zap.String("supplier_id", supplierID))
+		return 0, err
+	}
+	return count, nil
+}
+
 // Implementações dos métodos do RevenueRepository
 func (r *revenueRepository) Create(ctx context.Context, revenue *domain.Revenue) error {
 	return r.GetDB().WithContext(ctx).Create(revenue).Error
@@ -396,6 +429,21 @@ func (r *revenueRepository) GetTotalByCategory(ctx context.Context, communityID 
 		Select("COALESCE(SUM(amount), 0)").
 		Scan(&total).Error
 	return total, err
+}
+
+func (r *revenueRepository) CountByCategory(ctx context.Context, communityID, categoryID string) (int64, error) {
+	var count int64
+	err := r.db.WithContext(ctx).Model(&domain.Revenue{}).
+		Where("community_id = ? AND category_id = ?", communityID, categoryID).
+		Count(&count).Error
+	if err != nil {
+		r.logger.Error("erro ao contar receitas por categoria",
+			zap.Error(err),
+			zap.String("community_id", communityID),
+			zap.String("category_id", categoryID))
+		return 0, err
+	}
+	return count, nil
 }
 
 // Implementações dos métodos do FinancialReportRepository

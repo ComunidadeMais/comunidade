@@ -10,6 +10,8 @@ func InitFinancialRoutes(router *gin.RouterGroup, h RouteHandler) {
 		{
 			categories.POST("", h.AddFinancialCategory)
 			categories.GET("", h.ListFinancialCategories)
+			categories.PUT("/:id", h.UpdateFinancialCategory)
+			categories.DELETE("/:id", h.DeleteFinancialCategory)
 		}
 
 		// Rotas para Fornecedores
@@ -17,6 +19,8 @@ func InitFinancialRoutes(router *gin.RouterGroup, h RouteHandler) {
 		{
 			suppliers.POST("", h.AddSupplier)
 			suppliers.GET("", h.ListSuppliers)
+			suppliers.PUT("/:id", h.UpdateSupplier)
+			suppliers.DELETE("/:id", h.DeleteSupplier)
 		}
 
 		// Rotas para Despesas
@@ -24,6 +28,8 @@ func InitFinancialRoutes(router *gin.RouterGroup, h RouteHandler) {
 		{
 			expenses.POST("", h.AddExpense)
 			expenses.GET("", h.ListExpenses)
+			expenses.PUT("/:id", h.UpdateExpense)
+			expenses.DELETE("/:id", h.DeleteExpense)
 		}
 
 		// Rotas para Receitas
@@ -31,6 +37,8 @@ func InitFinancialRoutes(router *gin.RouterGroup, h RouteHandler) {
 		{
 			revenues.POST("", h.AddRevenue)
 			revenues.GET("", h.ListRevenues)
+			revenues.PUT("/:id", h.UpdateRevenue)
+			revenues.DELETE("/:id", h.DeleteRevenue)
 		}
 
 		// Rotas para Relatórios
