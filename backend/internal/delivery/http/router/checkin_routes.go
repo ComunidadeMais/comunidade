@@ -11,10 +11,10 @@ func InitPublicCheckInRoutes(router *gin.RouterGroup, h RouteHandler) {
 }
 
 func InitCheckInRoutes(router *gin.RouterGroup, h RouteHandler) {
-	// Rotas protegidas de check-in (apenas para visualização e estatísticas)
+	// Rotas protegidas de check-in (dashboard e estatísticas)
 	checkIn := router.Group("/events/:eventId/checkin")
 	{
-		checkIn.GET("/list", h.GetEventCheckIns) // Mudado para /list para evitar conflito
-		checkIn.GET("/stats", h.GetEventStats)
+		checkIn.GET("/list", h.GetEventCheckIns) // Lista de check-ins (protegido)
+		checkIn.GET("/stats", h.GetEventStats)   // Estatísticas do evento (protegido)
 	}
 }
