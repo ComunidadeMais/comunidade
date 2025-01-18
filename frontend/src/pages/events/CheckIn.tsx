@@ -188,9 +188,9 @@ export const CheckIn: React.FC = () => {
       } else {
         setError('Membro não encontrado');
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Erro ao buscar membro:', err);
-      setError('Erro ao buscar membro');
+      setError(err.response?.data?.error || 'Erro ao buscar membro');
     } finally {
       setLoading(false);
     }
