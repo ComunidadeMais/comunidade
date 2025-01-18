@@ -9,7 +9,10 @@ import (
 	"github.com/comunidade/backend/internal/repository"
 )
 
-var ErrEventNotFound = errors.New("evento não encontrado")
+var (
+	ErrEventNotFound    = errors.New("evento não encontrado")
+	ErrDuplicateCheckIn = errors.New("já existe um check-in para este email ou telefone neste evento")
+)
 
 type CheckInService interface {
 	CreateCheckIn(ctx context.Context, request *domain.CheckInRequest) error
@@ -41,6 +44,19 @@ func (s *checkInService) CreateCheckIn(ctx context.Context, request *domain.Chec
 		return ErrEventNotFound
 	}
 
+	// Verifica se já existe check-in com o mesmo email ou telefone
+	existingCheckIns, err := s.checkInRepo.GetByEventID(ctx, request.EventID)
+	if err != nil {
+		return err
+	}
+
+	for _, checkIn := range existingCheckIns {
+		if (request.Email != "" && checkIn.Email == request.Email) ||
+			(request.Phone != "" && checkIn.Phone == request.Phone) {
+			return ErrDuplicateCheckIn
+		}
+	}
+
 	checkIn := &domain.CheckIn{
 		EventID:   request.EventID,
 		MemberID:  request.MemberID,
@@ -69,6 +85,14 @@ func (s *checkInService) CreateCheckIn(ctx context.Context, request *domain.Chec
 			}
 			if familyMember == nil {
 				continue // Pula se o membro não for encontrado
+			}
+
+			// Verifica se já existe check-in para o membro da família
+			for _, checkIn := range existingCheckIns {
+				if (familyMember.Email != "" && checkIn.Email == familyMember.Email) ||
+					(familyMember.Phone != "" && checkIn.Phone == familyMember.Phone) {
+					continue // Pula se já existe check-in para este membro da família
+				}
 			}
 
 			familyCheckIn := &domain.CheckIn{

@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/comunidade/backend/internal/domain"
+	"github.com/comunidade/backend/internal/service"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )
@@ -17,7 +18,15 @@ func (h *Handler) CreateCheckIn(c *gin.Context) {
 
 	if err := h.services.CheckIn.CreateCheckIn(c.Request.Context(), &request); err != nil {
 		h.logger.Error("erro ao criar check-in", zap.Error(err))
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro interno do servidor"})
+
+		switch err {
+		case service.ErrDuplicateCheckIn:
+			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+		case service.ErrEventNotFound:
+			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro interno do servidor"})
+		}
 		return
 	}
 
