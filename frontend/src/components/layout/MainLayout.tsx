@@ -34,6 +34,7 @@ import {
   Receipt as ExpenseIcon,
   Payments as RevenueIcon,
   Assessment as ReportIcon,
+  VolunteerActivism as VolunteerActivismIcon,
 } from '@mui/icons-material';
 import Navbar from './Navbar';
 import { useCommunity } from '../../contexts/CommunityContext';
@@ -164,7 +165,35 @@ const menuItems: MenuItem[] = [
       }
     ]
   },
-
+  {
+    text: 'Campanhas e Doações',
+    path: '/donations',
+    icon: <VolunteerActivismIcon />,
+    description: 'Gestão de campanhas e doações',
+    section: 'Gestão',
+    subItems: [
+      {
+        text: 'Campanhas',
+        path: '/donations/campaigns',
+        description: 'Campanhas de arrecadação'
+      },
+      {
+        text: 'Doações',
+        path: '/donations',
+        description: 'Doações recebidas'
+      },
+      {
+        text: 'Doações Recorrentes',
+        path: '/donations/recurring',
+        description: 'Doações recorrentes'
+      },
+      {
+        text: 'Configurações',
+        path: '/donations/settings',
+        description: 'Configurações de integração'
+      }
+    ]
+  },
   {
     text: 'Configurações',
     path: '/settings',

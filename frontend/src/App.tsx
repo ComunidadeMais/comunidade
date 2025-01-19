@@ -41,6 +41,10 @@ import Suppliers from './pages/financial/suppliers';
 import Expenses from './pages/financial/expenses';
 import Revenues from './pages/financial/revenues';
 import Reports from './pages/financial/reports';
+import Campaigns from './pages/donations/campaigns';
+import Donations from './pages/donations/donations';
+import RecurringDonations from './pages/donations/recurring';
+import DonationSettings from './pages/donations/settings';
 
 // Componente para proteger rotas
 const PrivateRoute: FC<{ element: React.ReactElement }> = ({ element }) => {
@@ -110,6 +114,12 @@ const App: FC = () => {
                   <Route path="/financial/expenses" element={<PrivateRoute element={<Expenses />} />} />
                   <Route path="/financial/revenues" element={<PrivateRoute element={<Revenues />} />} />
                   <Route path="/financial/reports" element={<PrivateRoute element={<Reports />} />} />
+
+                  {/* Rotas de Doações */}
+                  <Route path="/donations/campaigns" element={<PrivateRoute element={<Campaigns />} />} />
+                  <Route path="/donations" element={<PrivateRoute element={<Donations />} />} />
+                  <Route path="/donations/recurring" element={<PrivateRoute element={<RecurringDonations />} />} />
+                  <Route path="/donations/settings" element={<PrivateRoute element={<DonationSettings />} />} />
                 </Routes>
               </UsersProvider>
             </CommunityProvider>

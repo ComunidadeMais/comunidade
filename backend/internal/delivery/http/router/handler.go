@@ -111,4 +111,13 @@ type RouteHandler interface {
 	DeleteRevenue(c *gin.Context)
 	GenerateFinancialReport(c *gin.Context)
 	ListFinancialReports(c *gin.Context)
+
+	// Doações
+	AddAsaasConfig(c *gin.Context)
+	AddCampaign(c *gin.Context)
+	ListCampaigns(c *gin.Context)
+	AddDonation(c *gin.Context)
+	ListDonations(c *gin.Context)
+	AddRecurringDonation(c *gin.Context)
+	ListRecurringDonations(c *gin.Context)
 }

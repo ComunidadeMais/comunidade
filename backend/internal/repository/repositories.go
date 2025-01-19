@@ -19,6 +19,11 @@ type Repositories struct {
 	Expense           ExpenseRepository
 	Revenue           RevenueRepository
 	FinancialReport   FinancialReportRepository
+	Donation          DonationRepository
+	Campaign          CampaignRepository
+	RecurringDonation RecurringDonationRepository
+	AsaasConfig       AsaasConfigRepository
+	Contribution      ContributionRepository
 }
 
 func NewRepositories(db *gorm.DB, logger *zap.Logger) *Repositories {
@@ -36,5 +41,10 @@ func NewRepositories(db *gorm.DB, logger *zap.Logger) *Repositories {
 		Expense:           NewExpenseRepository(db, logger),
 		Revenue:           NewRevenueRepository(db, logger),
 		FinancialReport:   NewFinancialReportRepository(db, logger),
+		Donation:          NewDonationRepository(db, logger),
+		Campaign:          NewCampaignRepository(db, logger),
+		RecurringDonation: NewRecurringDonationRepository(db, logger),
+		AsaasConfig:       NewAsaasConfigRepository(db, logger),
+		Contribution:      NewContributionRepository(db, logger),
 	}
 }

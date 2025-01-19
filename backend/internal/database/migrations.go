@@ -29,6 +29,10 @@ func RunMigrations(db *gorm.DB, logger *zap.Logger) error {
 		&domain.Supplier{},
 		&domain.FinancialCategory{},
 		&domain.FinancialReport{},
+		&domain.Donation{},
+		&domain.Campaign{},
+		&domain.RecurringDonation{},
+		&domain.AsaasConfig{},
 	}
 
 	// Executa as migrações
