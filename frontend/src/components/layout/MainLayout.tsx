@@ -112,6 +112,25 @@ const menuItems: MenuItem[] = [
     ]
   },
   {
+    text: 'Comunicações',
+    path: '/communications',
+    icon: <EmailIcon />,
+    description: 'Gerenciar comunicações',
+    section: 'Gestão',
+    subItems: [
+      {
+        text: 'Lista',
+        path: '/communications',
+        description: 'Visualizar lista de comunicações'
+      },
+      {
+        text: 'Templates',
+        path: '/communications/templates',
+        description: 'Visualizar e gerenciar templates de comunicações'
+      }
+    ]
+  },
+  {
     text: 'Financeiro',
     path: '/financial',
     icon: <FinanceIcon />,
@@ -134,31 +153,18 @@ const menuItems: MenuItem[] = [
         description: 'Registrar e gerenciar receitas'
       },
       {
+        text: 'Fornecedores',
+        path: '/financial/suppliers',
+        description: 'Registrar e gerenciar fornecedores'
+      },
+      {
         text: 'Relatórios',
         path: '/financial/reports',
         description: 'Visualizar relatórios financeiros'
       }
     ]
   },
-  {
-    text: 'Comunicações',
-    path: '/communications',
-    icon: <EmailIcon />,
-    description: 'Gerenciar comunicações',
-    section: 'Gestão',
-    subItems: [
-      {
-        text: 'Lista',
-        path: '/communications',
-        description: 'Visualizar lista de comunicações'
-      },
-      {
-        text: 'Templates',
-        path: '/communications/templates',
-        description: 'Visualizar e gerenciar templates de comunicações'
-      }
-    ]
-  },
+
   {
     text: 'Configurações',
     path: '/settings',

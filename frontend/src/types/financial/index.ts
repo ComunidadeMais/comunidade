@@ -21,6 +21,8 @@ export interface Supplier {
   email: string;
   phone?: string;
   address?: string;
+  number?: string;
+  neighborhood?: string;
   city?: string;
   state?: string;
   zip_code?: string;

@@ -37,9 +37,10 @@ import { EventView } from './pages/Events/EventView';
 import { CheckIn } from './pages/events/CheckIn';
 import { CheckInDashboard } from './pages/events/CheckInDashboard';
 import FinancialCategories from './pages/financial/categories';
+import Suppliers from './pages/financial/suppliers';
 import Expenses from './pages/financial/expenses';
 import Revenues from './pages/financial/revenues';
-import FinancialReports from './pages/financial/reports';
+import Reports from './pages/financial/reports';
 
 // Componente para proteger rotas
 const PrivateRoute: FC<{ element: React.ReactElement }> = ({ element }) => {
@@ -105,9 +106,10 @@ const App: FC = () => {
 
                   {/* Rotas Financeiras */}
                   <Route path="/financial/categories" element={<PrivateRoute element={<FinancialCategories />} />} />
+                  <Route path="/financial/suppliers" element={<PrivateRoute element={<Suppliers />} />} />
                   <Route path="/financial/expenses" element={<PrivateRoute element={<Expenses />} />} />
                   <Route path="/financial/revenues" element={<PrivateRoute element={<Revenues />} />} />
-                  <Route path="/financial/reports" element={<PrivateRoute element={<FinancialReports />} />} />
+                  <Route path="/financial/reports" element={<PrivateRoute element={<Reports />} />} />
                 </Routes>
               </UsersProvider>
             </CommunityProvider>

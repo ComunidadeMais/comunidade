@@ -24,20 +24,22 @@ type FinancialCategory struct {
 
 // Supplier representa um fornecedor
 type Supplier struct {
-	ID          string    `json:"id" gorm:"primaryKey;type:uuid"`
-	CommunityID string    `json:"community_id" gorm:"type:uuid;not null"`
-	UserID      string    `json:"user_id" gorm:"type:uuid;not null"`
-	Name        string    `json:"name" gorm:"not null"`
-	CNPJ        string    `json:"cnpj" gorm:"type:varchar(14)"`
-	Email       string    `json:"email"`
-	Phone       string    `json:"phone"`
-	Address     string    `json:"address"`
-	City        string    `json:"city"`
-	State       string    `json:"state"`
-	ZipCode     string    `json:"zip_code"`
-	Notes       string    `json:"notes"`
-	CreatedAt   time.Time `json:"created_at" gorm:"not null"`
-	UpdatedAt   time.Time `json:"updated_at" gorm:"not null"`
+	ID           string    `json:"id" gorm:"primaryKey;type:uuid"`
+	CommunityID  string    `json:"community_id" gorm:"type:uuid;not null"`
+	UserID       string    `json:"user_id" gorm:"type:uuid;not null"`
+	Name         string    `json:"name" gorm:"not null"`
+	CNPJ         string    `json:"cnpj" gorm:"type:varchar(14)"`
+	Email        string    `json:"email"`
+	Phone        string    `json:"phone"`
+	Address      string    `json:"address"`
+	Number       string    `json:"number"`
+	Neighborhood string    `json:"neighborhood"`
+	City         string    `json:"city"`
+	State        string    `json:"state"`
+	ZipCode      string    `json:"zip_code"`
+	Notes        string    `json:"notes"`
+	CreatedAt    time.Time `json:"created_at" gorm:"not null"`
+	UpdatedAt    time.Time `json:"updated_at" gorm:"not null"`
 
 	Community *Community `json:"community,omitempty" gorm:"foreignKey:CommunityID"`
 	User      *User      `json:"user,omitempty" gorm:"foreignKey:UserID"`

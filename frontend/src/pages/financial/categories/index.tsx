@@ -14,6 +14,7 @@ import {
   TextField,
   Typography,
   useTheme,
+  Chip,
 } from '@mui/material';
 import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import { DataGrid, GridColDef, GridActionsCellItem } from '@mui/x-data-grid';
@@ -24,6 +25,7 @@ import { useCommunity } from '../../../contexts/CommunityContext';
 import { financialService } from '../../../services/financial';
 import { FinancialCategory } from '../../../types/financial';
 import PageHeader from '../../../components/PageHeader';
+import getGridActions from '../../../components/GridActions';
 
 export default function FinancialCategories() {
   const theme = useTheme();
@@ -77,24 +79,40 @@ export default function FinancialCategories() {
   };
 
   const columns: GridColDef[] = [
-    { field: 'name', headerName: 'Nome', flex: 1 },
+    { 
+      field: 'name', 
+      headerName: 'Nome', 
+      flex: 1,
+      align: 'left',
+      headerAlign: 'left',
+    },
     {
       field: 'type',
       headerName: 'Tipo',
       width: 120,
+      align: 'center',
+      headerAlign: 'center',
       renderCell: (params) => (
-        <Typography>
+        <Typography align="center" sx={{ width: '100%' }}>
           {params.value === 'expense' ? 'Despesa' : 'Receita'}
         </Typography>
       ),
     },
-    { field: 'description', headerName: 'Descrição', flex: 1 },
+    { 
+      field: 'description', 
+      headerName: 'Descrição', 
+      flex: 1,
+      align: 'left',
+      headerAlign: 'left',
+    },
     {
       field: 'created_at',
       headerName: 'Criado em',
       width: 180,
+      align: 'center',
+      headerAlign: 'center',
       renderCell: (params) => (
-        <Typography>
+        <Typography align="center" sx={{ width: '100%' }}>
           {format(new Date(params.value), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
         </Typography>
       ),
@@ -104,18 +122,12 @@ export default function FinancialCategories() {
       type: 'actions',
       headerName: 'Ações',
       width: 100,
-      getActions: (params) => [
-        <GridActionsCellItem
-          icon={<EditIcon />}
-          label="Editar"
-          onClick={() => handleEdit(params.row)}
-        />,
-        <GridActionsCellItem
-          icon={<DeleteIcon />}
-          label="Excluir"
-          onClick={() => handleDelete(params.row)}
-        />,
-      ],
+      align: 'center',
+      headerAlign: 'center',
+      getActions: (params) => getGridActions({
+        onEdit: () => handleEdit(params.row),
+        onDelete: () => handleDelete(params.row),
+      }),
     },
   ];
 

@@ -13,9 +13,10 @@ import {
   TextField,
   Typography,
   useTheme,
+  Chip,
 } from '@mui/material';
-import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
-import { DataGrid, GridColDef, GridActionsCellItem } from '@mui/x-data-grid';
+import { Add as AddIcon } from '@mui/icons-material';
+import { DataGrid, GridColDef } from '@mui/x-data-grid';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useSnackbar } from 'notistack';
@@ -23,7 +24,7 @@ import { useCommunity } from '../../../contexts/CommunityContext';
 import { financialService } from '../../../services/financial';
 import { Revenue, FinancialCategory, RevenueStatus } from '../../../types/financial';
 import PageHeader from '../../../components/PageHeader';
-import { formatCurrency } from '../../../utils/format';
+import getGridActions from '../../../components/GridActions';
 
 export default function Revenues() {
   const theme = useTheme();
@@ -71,13 +72,35 @@ export default function Revenues() {
     }
   };
 
+  const getStatusChip = (status: string) => {
+    const statusConfig = {
+      pending: { label: 'Pendente', color: 'warning' },
+      received: { label: 'Recebido', color: 'success' },
+      cancelled: { label: 'Cancelado', color: 'error' },
+    };
+
+    const config = statusConfig[status as keyof typeof statusConfig];
+    
+    return (
+      <Chip
+        label={config.label}
+        color={config.color as 'warning' | 'success' | 'error'}
+        size="small"
+        variant="filled"
+        sx={{ minWidth: 85, justifyContent: 'center' }}
+      />
+    );
+  };
+
   const columns: GridColDef[] = [
     {
       field: 'date',
       headerName: 'Data',
       width: 120,
+      align: 'center',
+      headerAlign: 'center',
       renderCell: (params) => (
-        <Typography>
+        <Typography align="center" sx={{ width: '100%' }}>
           {format(new Date(params.value), 'dd/MM/yyyy', { locale: ptBR })}
         </Typography>
       ),
@@ -85,10 +108,15 @@ export default function Revenues() {
     {
       field: 'amount',
       headerName: 'Valor',
-      width: 120,
+      width: 130,
+      align: 'right',
+      headerAlign: 'right',
       renderCell: (params) => (
-        <Typography>
-          {formatCurrency(params.value)}
+        <Typography color="success.main" align="right" sx={{ width: '100%' }}>
+          {new Intl.NumberFormat('pt-BR', {
+            style: 'currency',
+            currency: 'BRL'
+          }).format(params.value)}
         </Typography>
       ),
     },
@@ -96,46 +124,51 @@ export default function Revenues() {
       field: 'category',
       headerName: 'Categoria',
       width: 200,
+      align: 'left',
+      headerAlign: 'left',
       renderCell: (params) => (
-        <Typography>{params.row.category?.name}</Typography>
+        <Typography align="left" sx={{ width: '100%' }}>
+          {params.row.category?.name}
+        </Typography>
       ),
     },
-    { field: 'description', headerName: 'Descrição', flex: 1 },
+    { 
+      field: 'description', 
+      headerName: 'Descrição', 
+      flex: 1,
+      align: 'left',
+      headerAlign: 'left',
+    },
     {
       field: 'status',
       headerName: 'Status',
       width: 120,
-      renderCell: (params) => {
-        const statusMap = {
-          pending: 'Pendente',
-          received: 'Recebido',
-          cancelled: 'Cancelado',
-        };
-        return <Typography>{statusMap[params.value as keyof typeof statusMap]}</Typography>;
-      },
+      align: 'center',
+      headerAlign: 'center',
+      renderCell: (params) => (
+        <Box sx={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
+          {getStatusChip(params.value)}
+        </Box>
+      ),
     },
     {
       field: 'payment_type',
       headerName: 'Forma de Pagamento',
       width: 160,
+      align: 'center',
+      headerAlign: 'center',
     },
     {
       field: 'actions',
       type: 'actions',
       headerName: 'Ações',
       width: 100,
-      getActions: (params) => [
-        <GridActionsCellItem
-          icon={<EditIcon />}
-          label="Editar"
-          onClick={() => handleEdit(params.row)}
-        />,
-        <GridActionsCellItem
-          icon={<DeleteIcon />}
-          label="Excluir"
-          onClick={() => handleDelete(params.row)}
-        />,
-      ],
+      align: 'center',
+      headerAlign: 'center',
+      getActions: (params) => getGridActions({
+        onEdit: () => handleEdit(params.row),
+        onDelete: () => handleDelete(params.row),
+      }),
     },
   ];
 

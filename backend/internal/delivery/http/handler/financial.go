@@ -19,15 +19,17 @@ type AddFinancialCategoryRequest struct {
 }
 
 type AddSupplierRequest struct {
-	Name    string `json:"name" binding:"required"`
-	CNPJ    string `json:"cnpj" binding:"required"`
-	Email   string `json:"email" binding:"required,email"`
-	Phone   string `json:"phone"`
-	Address string `json:"address"`
-	City    string `json:"city"`
-	State   string `json:"state"`
-	ZipCode string `json:"zip_code"`
-	Notes   string `json:"notes"`
+	Name         string `json:"name" binding:"required"`
+	CNPJ         string `json:"cnpj" binding:"required"`
+	Email        string `json:"email" binding:"required,email"`
+	Phone        string `json:"phone"`
+	Address      string `json:"address"`
+	Number       string `json:"number"`
+	Neighborhood string `json:"neighborhood"`
+	City         string `json:"city"`
+	State        string `json:"state"`
+	ZipCode      string `json:"zip_code"`
+	Notes        string `json:"notes"`
 }
 
 type AddExpenseRequest struct {
@@ -65,15 +67,17 @@ type UpdateFinancialCategoryRequest struct {
 }
 
 type UpdateSupplierRequest struct {
-	Name    string `json:"name" binding:"required"`
-	CNPJ    string `json:"cnpj" binding:"required"`
-	Email   string `json:"email" binding:"required,email"`
-	Phone   string `json:"phone"`
-	Address string `json:"address"`
-	City    string `json:"city"`
-	State   string `json:"state"`
-	ZipCode string `json:"zip_code"`
-	Notes   string `json:"notes"`
+	Name         string `json:"name" binding:"required"`
+	CNPJ         string `json:"cnpj" binding:"required"`
+	Email        string `json:"email" binding:"required,email"`
+	Phone        string `json:"phone"`
+	Address      string `json:"address"`
+	Number       string `json:"number"`
+	Neighborhood string `json:"neighborhood"`
+	City         string `json:"city"`
+	State        string `json:"state"`
+	ZipCode      string `json:"zip_code"`
+	Notes        string `json:"notes"`
 }
 
 type UpdateExpenseRequest struct {
@@ -212,19 +216,21 @@ func (h *Handler) AddSupplier(c *gin.Context) {
 	}
 
 	supplier := &domain.Supplier{
-		CommunityID: communityID,
-		UserID:      user.(*domain.User).ID,
-		Name:        req.Name,
-		CNPJ:        req.CNPJ,
-		Email:       req.Email,
-		Phone:       req.Phone,
-		Address:     req.Address,
-		City:        req.City,
-		State:       req.State,
-		ZipCode:     req.ZipCode,
-		Notes:       req.Notes,
-		CreatedAt:   time.Now(),
-		UpdatedAt:   time.Now(),
+		CommunityID:  communityID,
+		UserID:       user.(*domain.User).ID,
+		Name:         req.Name,
+		CNPJ:         req.CNPJ,
+		Email:        req.Email,
+		Phone:        req.Phone,
+		Address:      req.Address,
+		Number:       req.Number,
+		Neighborhood: req.Neighborhood,
+		City:         req.City,
+		State:        req.State,
+		ZipCode:      req.ZipCode,
+		Notes:        req.Notes,
+		CreatedAt:    time.Now(),
+		UpdatedAt:    time.Now(),
 	}
 
 	if err := h.repos.Supplier.Create(context.Background(), supplier); err != nil {
@@ -756,6 +762,8 @@ func (h *Handler) UpdateSupplier(c *gin.Context) {
 	supplier.Email = req.Email
 	supplier.Phone = req.Phone
 	supplier.Address = req.Address
+	supplier.Number = req.Number
+	supplier.Neighborhood = req.Neighborhood
 	supplier.City = req.City
 	supplier.State = req.State
 	supplier.ZipCode = req.ZipCode
