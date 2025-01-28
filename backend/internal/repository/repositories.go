@@ -23,7 +23,8 @@ type Repositories struct {
 	Campaign          CampaignRepository
 	RecurringDonation RecurringDonationRepository
 	AsaasConfig       AsaasConfigRepository
-	Contribution      ContributionRepository
+	AsaasAccount      AsaasAccountRepository
+	//Contribution      ContributionRepository
 }
 
 func NewRepositories(db *gorm.DB, logger *zap.Logger) *Repositories {
@@ -45,6 +46,7 @@ func NewRepositories(db *gorm.DB, logger *zap.Logger) *Repositories {
 		Campaign:          NewCampaignRepository(db, logger),
 		RecurringDonation: NewRecurringDonationRepository(db, logger),
 		AsaasConfig:       NewAsaasConfigRepository(db, logger),
-		Contribution:      NewContributionRepository(db, logger),
+		AsaasAccount:      NewAsaasAccountRepository(db, logger),
+		//Contribution:      NewContributionRepository(db, logger),
 	}
 }

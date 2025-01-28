@@ -10,6 +10,7 @@ type RouteHandler interface {
 	RefreshToken(c *gin.Context)
 	ForgotPassword(c *gin.Context)
 	ResetPassword(c *gin.Context)
+	ChangePassword(c *gin.Context)
 
 	// User
 	GetProfile(c *gin.Context)
@@ -112,12 +113,30 @@ type RouteHandler interface {
 	GenerateFinancialReport(c *gin.Context)
 	ListFinancialReports(c *gin.Context)
 
-	// Doações
+	// ASAAS Integration
 	AddAsaasConfig(c *gin.Context)
+	GetAsaasConfig(c *gin.Context)
+	UpdateAsaasConfig(c *gin.Context)
+
+	// ASAAS Accounts
+	AddAsaasAccount(c *gin.Context)
+	ListAsaasAccounts(c *gin.Context)
+	GetAsaasAccount(c *gin.Context)
+	UpdateAsaasAccount(c *gin.Context)
+	DeleteAsaasAccount(c *gin.Context)
+	RefreshAccount(c *gin.Context)
+	GetAsaasAccountStatus(c *gin.Context)
+
+	// Campaigns
 	AddCampaign(c *gin.Context)
 	ListCampaigns(c *gin.Context)
+
+	// Donations
 	AddDonation(c *gin.Context)
 	ListDonations(c *gin.Context)
 	AddRecurringDonation(c *gin.Context)
 	ListRecurringDonations(c *gin.Context)
+
+	// Webhooks
+	HandleAsaasAccountStatusWebhook(c *gin.Context)
 }

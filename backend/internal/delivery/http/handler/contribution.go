@@ -41,3 +41,7 @@ func (h *Handler) GetContributionBatch(c *gin.Context) {
 func (h *Handler) UpdateContributionBatch(c *gin.Context) {
 	c.JSON(http.StatusNotImplemented, gin.H{"message": "not implemented"})
 }
+
+func (h *Handler) AddContribution(c *gin.Context) {
+	c.JSON(http.StatusNotImplemented, gin.H{"message": "Método ainda não implementado"})
+}

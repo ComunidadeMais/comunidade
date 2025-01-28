@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Community } from '../types/community';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { Community } from '../hooks/useSelectedCommunity';
 import { CommunityService } from '../services/community';
 
 export interface CommunityContextData {
@@ -9,10 +9,7 @@ export interface CommunityContextData {
   loading: boolean;
   error: string | null;
   loadCommunities: () => Promise<void>;
-  selectedCommunity: {
-    id: string;
-    name: string;
-  } | null;
+  selectedCommunity: Community | null;
 }
 
 const communityContextDefaultValues: CommunityContextData = {
@@ -25,13 +22,32 @@ const communityContextDefaultValues: CommunityContextData = {
   selectedCommunity: null
 };
 
-export const CommunityContext = createContext<CommunityContextData>(communityContextDefaultValues);
+export interface CommunityContextType {
+  community: Community | null;
+  communityId: string;
+  setCommunity: (community: Community | null) => void;
+  activeCommunity: Community | null;
+  setActiveCommunity: (community: Community | null) => void;
+  communities: Community[];
+  loading: boolean;
+  error: string | null;
+  loadCommunities: () => Promise<void>;
+  selectedCommunity: Community | null;
+  setSelectedCommunity: (community: Community | null) => void;
+}
 
-export const CommunityProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const CommunityContext = createContext<CommunityContextType | null>(null);
+
+interface CommunityProviderProps {
+  children: ReactNode;
+}
+
+export function CommunityProvider({ children }: CommunityProviderProps) {
   const [activeCommunity, setActiveCommunity] = useState<Community | null>(null);
   const [communities, setCommunities] = useState<Community[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedCommunity, setSelectedCommunity] = useState<Community | null>(null);
 
   const loadCommunities = async () => {
     try {
@@ -62,20 +78,23 @@ export const CommunityProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     activeCommunity,
     setActiveCommunity,
     communities,
+    setCommunities,
+    selectedCommunity,
+    setSelectedCommunity,
+    community: activeCommunity,
+    communityId: activeCommunity?.id || '',
+    setCommunity: setActiveCommunity,
     loading,
     error,
-    loadCommunities,
-    selectedCommunity: activeCommunity
+    loadCommunities
   };
 
   return (
-    <CommunityContext.Provider
-      value={value}
-    >
+    <CommunityContext.Provider value={value}>
       {children}
     </CommunityContext.Provider>
   );
-};
+}
 
 export const useCommunity = () => {
   const context = useContext(CommunityContext);

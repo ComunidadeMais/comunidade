@@ -59,3 +59,46 @@ func (h *Handler) checkUserPermission(ctx context.Context, userID string, commun
 	}
 	return nil
 }
+
+type RouteHandler interface {
+	// Auth
+	SignUp(c *gin.Context)
+	SignIn(c *gin.Context)
+	SignOut(c *gin.Context)
+	RefreshToken(c *gin.Context)
+	ForgotPassword(c *gin.Context)
+	ResetPassword(c *gin.Context)
+	VerifyEmail(c *gin.Context)
+	ResendVerificationEmail(c *gin.Context)
+
+	// Communities
+	AddCommunity(c *gin.Context)
+	GetCommunity(c *gin.Context)
+	ListCommunities(c *gin.Context)
+	UpdateCommunity(c *gin.Context)
+	DeleteCommunity(c *gin.Context)
+	GetCommunityMembers(c *gin.Context)
+	AddCommunityMember(c *gin.Context)
+	UpdateCommunityMember(c *gin.Context)
+	DeleteCommunityMember(c *gin.Context)
+
+	// Donations
+	AddAsaasConfig(c *gin.Context)
+	GetAsaasConfig(c *gin.Context)
+	UpdateAsaasConfig(c *gin.Context)
+	AddAsaasAccount(c *gin.Context)
+	ListAsaasAccounts(c *gin.Context)
+	GetAsaasAccount(c *gin.Context)
+	UpdateAsaasAccount(c *gin.Context)
+	DeleteAsaasAccount(c *gin.Context)
+	RefreshAccount(c *gin.Context)
+	AddCampaign(c *gin.Context)
+	ListCampaigns(c *gin.Context)
+	AddDonation(c *gin.Context)
+	ListDonations(c *gin.Context)
+	AddRecurringDonation(c *gin.Context)
+	ListRecurringDonations(c *gin.Context)
+
+	// Webhooks
+	HandleAsaasAccountStatusWebhook(c *gin.Context)
+}

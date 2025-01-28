@@ -38,6 +38,7 @@ import {
 } from '@mui/icons-material';
 import Navbar from './Navbar';
 import { useCommunity } from '../../contexts/CommunityContext';
+import { FaHandHoldingHeart } from 'react-icons/fa';
 
 const DRAWER_WIDTH = 280;
 const COLLAPSED_DRAWER_WIDTH = 72;
@@ -188,8 +189,8 @@ const menuItems: MenuItem[] = [
         description: 'Doações recorrentes'
       },
       {
-        text: 'Configurações',
-        path: '/donations/settings',
+        text: 'Configurações de Conta',
+        path: '/donations/asaas',
         description: 'Configurações de integração'
       }
     ]
@@ -210,7 +211,8 @@ export const MainLayout: FC<MainLayoutProps> = ({ children }) => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [expandedItems, setExpandedItems] = useState<{ [key: string]: boolean }>({});
-  const { loadCommunities } = useCommunity();
+  const { loadCommunities, selectedCommunity } = useCommunity();
+  const communityId = selectedCommunity?.id;
 
   useEffect(() => {
     loadCommunities();

@@ -1,6 +1,55 @@
 import api from './api';
 import { Campaign, Donation, RecurringDonation, AsaasConfig } from '../types/donation';
 
+export interface BankAccount {
+  bank: string;
+  bank_agency: string;
+  bank_account: string;
+  bank_account_type: string;
+}
+
+export interface WebhookConfig {
+  name: string;
+  url: string;
+  email: string;
+  send_type: string;
+  interrupted: boolean;
+  enabled: boolean;
+  api_version: number;
+  auth_token: string;
+  events: string[];
+}
+
+export interface AsaasAccount {
+  id: string;
+  community_id: string;
+  name: string;
+  email: string;
+  cpf_cnpj: string;
+  birth_date?: string;
+  company_type: string;
+  phone: string;
+  mobile_phone?: string;
+  address: string;
+  address_number: string;
+  complement?: string;
+  province: string;
+  postal_code: string;
+  api_key?: string;
+  wallet_id?: string;
+  status: string;
+  asaas_id?: string;
+  created_at: string;
+  updated_at: string;
+  webhooks: WebhookConfig[];
+  responsible_name: string;
+  responsible_cpf: string;
+  responsible_birth_date: string;
+  responsible_phone: string;
+  responsible_email: string;
+  bank_account: BankAccount;
+}
+
 export const donationService = {
   // Campanhas
   listCampaigns: (communityId: string) => 
@@ -50,10 +99,43 @@ export const donationService = {
   deleteRecurringDonation: (communityId: string, recurringDonationId: string) =>
     api.delete(`/communities/${communityId}/recurring-donations/${recurringDonationId}`),
 
-  // Configurações Asaas
-  getAsaasConfig: (communityId: string) =>
-    api.get<AsaasConfig>(`/communities/${communityId}/asaas-config`),
-  
-  updateAsaasConfig: (communityId: string, data: Partial<AsaasConfig>) =>
-    api.put<AsaasConfig>(`/communities/${communityId}/asaas-config`, data),
+  // ASAAS Account
+  createAsaasAccount: async (communityId: string, data: Partial<AsaasAccount>) => {
+    const response = await api.post<AsaasAccount>(`/communities/${communityId}/donations/asaas/accounts`, data);
+    return response.data;
+  },
+
+  getAsaasAccount: async (communityId: string) => {
+    const response = await api.get<{ accounts: AsaasAccount[]; pagination: any }>(`/communities/${communityId}/donations/asaas/accounts`);
+    return response.data;
+  },
+
+  updateAsaasAccount: async (communityId: string, accountId: string, data: Partial<AsaasAccount>) => {
+    const response = await api.put<AsaasAccount>(`/communities/${communityId}/donations/asaas/accounts/${accountId}`, data);
+    return response.data;
+  },
+
+  deleteAsaasAccount: async (communityId: string, accountId: string) => {
+    await api.delete(`/communities/${communityId}/donations/asaas/accounts/${accountId}`);
+  },
+
+  listAsaasAccounts: async (communityId: string) => {
+    const response = await api.get<{ accounts: AsaasAccount[]; pagination: any }>(`/communities/${communityId}/donations/asaas/accounts`);
+    return response.data;
+  },
+
+  // Bank Accounts
+  addBankAccount: async (communityId: string, data: BankAccount) => {
+    const response = await api.post<BankAccount>(`/communities/${communityId}/donations/asaas/bank-accounts`, data);
+    return response.data;
+  },
+
+  deleteBankAccount: async (communityId: string, accountId: string) => {
+    await api.delete(`/communities/${communityId}/donations/asaas/bank-accounts/${accountId}`);
+  },
+
+  refreshAsaasAccount: async (communityId: string, accountId: string) => {
+    const response = await api.post(`/communities/${communityId}/donations/asaas/accounts/${accountId}/refresh`);
+    return response.data;
+  }
 }; 

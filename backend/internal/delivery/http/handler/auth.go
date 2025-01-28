@@ -262,3 +262,7 @@ func (h *Handler) ResetPassword(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "Senha atualizada com sucesso"})
 }
+
+func (h *Handler) ChangePassword(c *gin.Context) {
+	c.JSON(http.StatusNotImplemented, gin.H{"message": "Método ainda não implementado"})
+}

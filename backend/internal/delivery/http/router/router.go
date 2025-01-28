@@ -32,5 +32,6 @@ func InitRoutes(r *gin.Engine, h RouteHandler, authMiddleware gin.HandlerFunc) {
 		InitCommunicationRoutes(protected, h)
 		InitFinancialRoutes(protected, h)
 		InitDonationRoutes(protected, h)
+
 	}
 }

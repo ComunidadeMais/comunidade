@@ -45,6 +45,9 @@ import Campaigns from './pages/donations/campaigns';
 import Donations from './pages/donations/donations';
 import RecurringDonations from './pages/donations/recurring';
 import DonationSettings from './pages/donations/settings';
+import AsaasSettings from './pages/donations/asaas/settings';
+import CreateAsaasAccount from './pages/donations/asaas/create';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 // Componente para proteger rotas
 const PrivateRoute: FC<{ element: React.ReactElement }> = ({ element }) => {
@@ -56,77 +59,83 @@ const PrivateRoute: FC<{ element: React.ReactElement }> = ({ element }) => {
   );
 };
 
+const queryClient = new QueryClient();
+
 const App: FC = () => {
   return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      <Router>
-        <Routes>
-          {/* Rotas Públicas */}
-          <Route path="/" element={<Home />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/events/:eventId/view" element={<EventView />} />
-          <Route path="/events/:eventId/checkin" element={<CheckIn />} />
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <Router>
+          <Routes>
+            {/* Rotas Públicas */}
+            <Route path="/" element={<Home />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/events/:eventId/view" element={<EventView />} />
+            <Route path="/events/:eventId/checkin" element={<CheckIn />} />
 
-          {/* Rotas protegidas */}
-          <Route path="/*" element={
-            <CommunityProvider>
-              <UsersProvider>
-                <Routes>
-                  <Route path="/dashboard" element={<PrivateRoute element={<Dashboard />} />} />
-                  <Route path="/members" element={<PrivateRoute element={<Members />} />} />
-                  <Route path="/members/new" element={<PrivateRoute element={<MemberForm />} />} />
-                  <Route path="/members/:id" element={<PrivateRoute element={<MemberForm />} />} />
-                  <Route path="/families" element={<PrivateRoute element={<FamilyList />} />} />
-                  <Route path="/families/new" element={<PrivateRoute element={<FamilyForm />} />} />
-                  <Route path="/families/:id/edit" element={<PrivateRoute element={<FamilyForm />} />} />
-                  <Route path="/families/:id/members" element={<PrivateRoute element={<FamilyMembers />} />} />
-                  <Route path="/groups" element={<PrivateRoute element={<Groups />} />} />
-                  <Route path="/groups/new" element={<PrivateRoute element={<GroupForm />} />} />
-                  <Route path="/groups/:id" element={<PrivateRoute element={<GroupDetails />} />} />
-                  <Route path="/groups/:id/edit" element={<PrivateRoute element={<GroupForm />} />} />
-                  <Route path="/communities/:communityId/groups/:groupId/members" element={<PrivateRoute element={<GroupMembers />} />} />
-                  <Route path="/events" element={<PrivateRoute element={<Events />} />} />
-                  <Route path="/events/calendar" element={<PrivateRoute element={<Calendar />} />} />
-                  <Route path="/events/new" element={<PrivateRoute element={<EventForm />} />} />
-                  <Route path="/events/:eventId/edit" element={<PrivateRoute element={<EventForm />} />} />
-                  <Route path="/events/:eventId/checkin/dashboard" element={<PrivateRoute element={<CheckInDashboard />} />} />
-                  <Route path="/settings" element={<PrivateRoute element={<Settings />} />} />
-                  <Route path="/settings/communication" element={<PrivateRoute element={<CommunicationSettings />} />} />
-                  <Route path="/profile" element={<PrivateRoute element={<Profile />} />} />
-                  <Route path="/admin/communities" element={<PrivateRoute element={<Communities />} />} />
+            {/* Rotas protegidas */}
+            <Route path="/*" element={
+              <CommunityProvider>
+                <UsersProvider>
+                  <Routes>
+                    <Route path="/dashboard" element={<PrivateRoute element={<Dashboard />} />} />
+                    <Route path="/members" element={<PrivateRoute element={<Members />} />} />
+                    <Route path="/members/new" element={<PrivateRoute element={<MemberForm />} />} />
+                    <Route path="/members/:id" element={<PrivateRoute element={<MemberForm />} />} />
+                    <Route path="/families" element={<PrivateRoute element={<FamilyList />} />} />
+                    <Route path="/families/new" element={<PrivateRoute element={<FamilyForm />} />} />
+                    <Route path="/families/:id/edit" element={<PrivateRoute element={<FamilyForm />} />} />
+                    <Route path="/families/:id/members" element={<PrivateRoute element={<FamilyMembers />} />} />
+                    <Route path="/groups" element={<PrivateRoute element={<Groups />} />} />
+                    <Route path="/groups/new" element={<PrivateRoute element={<GroupForm />} />} />
+                    <Route path="/groups/:id" element={<PrivateRoute element={<GroupDetails />} />} />
+                    <Route path="/groups/:id/edit" element={<PrivateRoute element={<GroupForm />} />} />
+                    <Route path="/communities/:communityId/groups/:groupId/members" element={<PrivateRoute element={<GroupMembers />} />} />
+                    <Route path="/events" element={<PrivateRoute element={<Events />} />} />
+                    <Route path="/events/calendar" element={<PrivateRoute element={<Calendar />} />} />
+                    <Route path="/events/new" element={<PrivateRoute element={<EventForm />} />} />
+                    <Route path="/events/:eventId/edit" element={<PrivateRoute element={<EventForm />} />} />
+                    <Route path="/events/:eventId/checkin/dashboard" element={<PrivateRoute element={<CheckInDashboard />} />} />
+                    <Route path="/settings" element={<PrivateRoute element={<Settings />} />} />
+                    <Route path="/settings/communication" element={<PrivateRoute element={<CommunicationSettings />} />} />
+                    <Route path="/profile" element={<PrivateRoute element={<Profile />} />} />
+                    <Route path="/admin/communities" element={<PrivateRoute element={<Communities />} />} />
 
-                  {/* Rotas de Comunicação */}
-                  <Route path="/communications" element={<PrivateRoute element={<Communications />} />} />
-                  <Route path="/communications/new" element={<PrivateRoute element={<CommunicationForm />} />} />
-                  <Route path="/communications/:communicationId/edit" element={<PrivateRoute element={<CommunicationForm />} />} />
+                    {/* Rotas de Comunicação */}
+                    <Route path="/communications" element={<PrivateRoute element={<Communications />} />} />
+                    <Route path="/communications/new" element={<PrivateRoute element={<CommunicationForm />} />} />
+                    <Route path="/communications/:communicationId/edit" element={<PrivateRoute element={<CommunicationForm />} />} />
 
-                  {/* Rotas de Templates */}
-                  <Route path="/communications/templates" element={<PrivateRoute element={<Templates />} />} />
-                  <Route path="/communications/templates/new" element={<PrivateRoute element={<TemplateForm />} />} />
-                  <Route path="/communications/templates/:templateId/edit" element={<PrivateRoute element={<TemplateForm />} />} />
+                    {/* Rotas de Templates */}
+                    <Route path="/communications/templates" element={<PrivateRoute element={<Templates />} />} />
+                    <Route path="/communications/templates/new" element={<PrivateRoute element={<TemplateForm />} />} />
+                    <Route path="/communications/templates/:templateId/edit" element={<PrivateRoute element={<TemplateForm />} />} />
 
-                  {/* Rotas Financeiras */}
-                  <Route path="/financial/categories" element={<PrivateRoute element={<FinancialCategories />} />} />
-                  <Route path="/financial/suppliers" element={<PrivateRoute element={<Suppliers />} />} />
-                  <Route path="/financial/expenses" element={<PrivateRoute element={<Expenses />} />} />
-                  <Route path="/financial/revenues" element={<PrivateRoute element={<Revenues />} />} />
-                  <Route path="/financial/reports" element={<PrivateRoute element={<Reports />} />} />
+                    {/* Rotas Financeiras */}
+                    <Route path="/financial/categories" element={<PrivateRoute element={<FinancialCategories />} />} />
+                    <Route path="/financial/suppliers" element={<PrivateRoute element={<Suppliers />} />} />
+                    <Route path="/financial/expenses" element={<PrivateRoute element={<Expenses />} />} />
+                    <Route path="/financial/revenues" element={<PrivateRoute element={<Revenues />} />} />
+                    <Route path="/financial/reports" element={<PrivateRoute element={<Reports />} />} />
 
-                  {/* Rotas de Doações */}
-                  <Route path="/donations/campaigns" element={<PrivateRoute element={<Campaigns />} />} />
-                  <Route path="/donations" element={<PrivateRoute element={<Donations />} />} />
-                  <Route path="/donations/recurring" element={<PrivateRoute element={<RecurringDonations />} />} />
-                  <Route path="/donations/settings" element={<PrivateRoute element={<DonationSettings />} />} />
-                </Routes>
-              </UsersProvider>
-            </CommunityProvider>
-          } />
-        </Routes>
-      </Router>
-    </ThemeProvider>
+                    {/* Rotas de Doações */}
+                    <Route path="/donations/campaigns" element={<PrivateRoute element={<Campaigns />} />} />
+                    <Route path="/donations" element={<PrivateRoute element={<Donations />} />} />
+                    <Route path="/donations/recurring" element={<PrivateRoute element={<RecurringDonations />} />} />
+                    <Route path="/donations/settings" element={<PrivateRoute element={<DonationSettings />} />} />
+                    <Route path="/donations/asaas" element={<PrivateRoute element={<AsaasSettings />} />} />
+                    <Route path="/donations/asaas/create" element={<PrivateRoute element={<CreateAsaasAccount />} />} />
+                  </Routes>
+                </UsersProvider>
+              </CommunityProvider>
+            } />
+          </Routes>
+        </Router>
+      </ThemeProvider>
+    </QueryClientProvider>
   );
 };
 
