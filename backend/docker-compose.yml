@@ -11,13 +11,10 @@ services:
     ports:
       - "5434:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - ./data/postgres:/var/lib/postgresql/data
     networks:
       - comunidade_plus_network
 
-volumes:
-  postgres_data:
-
 networks:
   comunidade_plus_network:
-    driver: bridge 
+    driver: bridge
