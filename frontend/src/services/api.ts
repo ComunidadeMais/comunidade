@@ -25,7 +25,13 @@ api.interceptors.request.use(config => {
     return pattern.test(currentPath || '');
   });
   
-  console.log('Requisição para:', currentPath, 'É rota pública?', isPublicRoute);
+  console.log('API Request:', {
+    method: config.method,
+    url: currentPath,
+    isPublicRoute,
+    hasToken: !!token,
+    headers: config.headers
+  });
 
   if (token && config.headers && !isPublicRoute) {
     console.log('Token adicionado ao header');

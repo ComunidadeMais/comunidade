@@ -49,6 +49,25 @@ export function CommunityProvider({ children }: CommunityProviderProps) {
   const [error, setError] = useState<string | null>(null);
   const [selectedCommunity, setSelectedCommunity] = useState<Community | null>(null);
 
+  // Carrega a comunidade ativa do localStorage
+  useEffect(() => {
+    const loadActiveCommunity = async () => {
+      const activeCommunityId = localStorage.getItem('activeCommunityId');
+      if (activeCommunityId) {
+        try {
+          const response = await CommunityService.getCommunity(activeCommunityId);
+          setActiveCommunity(response);
+          setSelectedCommunity(response);
+        } catch (error) {
+          console.error('Erro ao carregar comunidade ativa:', error);
+          localStorage.removeItem('activeCommunityId');
+        }
+      }
+    };
+
+    loadActiveCommunity();
+  }, []);
+
   const loadCommunities = async () => {
     try {
       setLoading(true);
@@ -56,6 +75,7 @@ export function CommunityProvider({ children }: CommunityProviderProps) {
       setCommunities(response);
       if (response.length > 0 && !activeCommunity) {
         setActiveCommunity(response[0]);
+        setSelectedCommunity(response[0]);
       }
     } catch (error) {
       setError('Erro ao carregar comunidades');
@@ -69,8 +89,10 @@ export function CommunityProvider({ children }: CommunityProviderProps) {
   useEffect(() => {
     if (activeCommunity) {
       localStorage.setItem('activeCommunityId', activeCommunity.id);
+      setSelectedCommunity(activeCommunity);
     } else {
       localStorage.removeItem('activeCommunityId');
+      setSelectedCommunity(null);
     }
   }, [activeCommunity]);
 
