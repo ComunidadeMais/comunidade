@@ -52,52 +52,56 @@ export interface AsaasAccount {
 
 export const donationService = {
   // Campanhas
-  listCampaigns: (communityId: string) => 
-    api.get<Campaign[]>(`/communities/${communityId}/campaigns`),
+  listCampaigns: async (communityId: string) => {
+    const response = await api.get<{ campaigns: Campaign[] }>(`/communities/${communityId}/donations/campaigns`);
+    return response.data.campaigns;
+  },
   
   getCampaign: (communityId: string, campaignId: string) =>
-    api.get<Campaign>(`/communities/${communityId}/campaigns/${campaignId}`),
+    api.get<Campaign>(`/communities/${communityId}/donations/campaigns/${campaignId}`),
   
   createCampaign: (communityId: string, data: Omit<Campaign, 'id' | 'created_at' | 'updated_at'>) =>
-    api.post<Campaign>(`/communities/${communityId}/campaigns`, data),
+    api.post<Campaign>(`/communities/${communityId}/donations/campaigns`, data),
   
   updateCampaign: (communityId: string, campaignId: string, data: Partial<Campaign>) =>
-    api.put<Campaign>(`/communities/${communityId}/campaigns/${campaignId}`, data),
+    api.put<Campaign>(`/communities/${communityId}/donations/campaigns/${campaignId}`, data),
   
   deleteCampaign: (communityId: string, campaignId: string) =>
-    api.delete(`/communities/${communityId}/campaigns/${campaignId}`),
+    api.delete(`/communities/${communityId}/donations/campaigns/${campaignId}`),
 
   // Doações
-  listDonations: (communityId: string) =>
-    api.get<Donation[]>(`/communities/${communityId}/donations`),
+  listDonations: async (communityId: string) => {
+    const response = await api.get<{ donations: Donation[] }>(`/communities/${communityId}/donations/donations`);
+    return response.data.donations;
+  },
   
   getDonation: (communityId: string, donationId: string) =>
-    api.get<Donation>(`/communities/${communityId}/donations/${donationId}`),
+    api.get<Donation>(`/communities/${communityId}/donations/donations/${donationId}`),
   
   createDonation: (communityId: string, data: Omit<Donation, 'id' | 'created_at' | 'updated_at'>) =>
-    api.post<Donation>(`/communities/${communityId}/donations`, data),
+    api.post<Donation>(`/communities/${communityId}/donations/donations`, data),
   
   updateDonation: (communityId: string, donationId: string, data: Partial<Donation>) =>
-    api.put<Donation>(`/communities/${communityId}/donations/${donationId}`, data),
+    api.put<Donation>(`/communities/${communityId}/donations/donations/${donationId}`, data),
   
   deleteDonation: (communityId: string, donationId: string) =>
-    api.delete(`/communities/${communityId}/donations/${donationId}`),
+    api.delete(`/communities/${communityId}/donations/donations/${donationId}`),
 
   // Doações Recorrentes
   listRecurringDonations: (communityId: string) =>
-    api.get<RecurringDonation[]>(`/communities/${communityId}/recurring-donations`),
+    api.get<RecurringDonation[]>(`/communities/${communityId}/donations/recurring-donations`),
   
   getRecurringDonation: (communityId: string, recurringDonationId: string) =>
-    api.get<RecurringDonation>(`/communities/${communityId}/recurring-donations/${recurringDonationId}`),
+    api.get<RecurringDonation>(`/communities/${communityId}/donations/recurring-donations/${recurringDonationId}`),
   
   createRecurringDonation: (communityId: string, data: Omit<RecurringDonation, 'id' | 'created_at' | 'updated_at'>) =>
-    api.post<RecurringDonation>(`/communities/${communityId}/recurring-donations`, data),
+    api.post<RecurringDonation>(`/communities/${communityId}/donations/recurring-donations`, data),
   
   updateRecurringDonation: (communityId: string, recurringDonationId: string, data: Partial<RecurringDonation>) =>
-    api.put<RecurringDonation>(`/communities/${communityId}/recurring-donations/${recurringDonationId}`, data),
+    api.put<RecurringDonation>(`/communities/${communityId}/donations/recurring-donations/${recurringDonationId}`, data),
   
   deleteRecurringDonation: (communityId: string, recurringDonationId: string) =>
-    api.delete(`/communities/${communityId}/recurring-donations/${recurringDonationId}`),
+    api.delete(`/communities/${communityId}/donations/recurring-donations/${recurringDonationId}`),
 
   // ASAAS Account
   createAsaasAccount: async (communityId: string, data: Partial<AsaasAccount>) => {
@@ -137,5 +141,9 @@ export const donationService = {
   refreshAsaasAccount: async (communityId: string, accountId: string) => {
     const response = await api.post(`/communities/${communityId}/donations/asaas/accounts/${accountId}/refresh`);
     return response.data;
+  },
+
+  async sendPaymentLink(communityId: string, donationId: string): Promise<void> {
+    await api.post(`/communities/${communityId}/donations/${donationId}/send-payment-link`);
   }
-}; 
+};

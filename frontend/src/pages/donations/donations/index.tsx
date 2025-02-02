@@ -4,18 +4,21 @@ import {
   Button,
   Card,
   CardContent,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  Grid,
-  TextField,
   Typography,
   useTheme,
   Chip,
-  MenuItem,
+  IconButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Link,
 } from '@mui/material';
-import { Add as AddIcon } from '@mui/icons-material';
+import {
+  Add as AddIcon,
+  Link as LinkIcon,
+  Email as EmailIcon,
+} from '@mui/icons-material';
 import { DataGrid, GridColDef } from '@mui/x-data-grid';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -25,6 +28,7 @@ import { donationService } from '../../../services/donation';
 import { Donation, Campaign } from '../../../types/donation';
 import PageHeader from '../../../components/PageHeader';
 import getGridActions from '../../../components/GridActions';
+import DonationForm from './DonationForm';
 
 const paymentMethods = [
   { value: 'credit_card', label: 'Cartão de Crédito' },
@@ -55,21 +59,11 @@ export default function Donations() {
   const [loading, setLoading] = useState(false);
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedDonation, setSelectedDonation] = useState<Donation | null>(null);
-  const [formData, setFormData] = useState({
-    campaign_id: '',
-    amount: 0,
-    payment_method: '',
-    status: 'pending',
-  });
+  const [openLinkDialog, setOpenLinkDialog] = useState(false);
+  const [selectedLink, setSelectedLink] = useState('');
 
   const handleEdit = (donation: Donation) => {
     setSelectedDonation(donation);
-    setFormData({
-      campaign_id: donation.campaign_id || '',
-      amount: donation.amount,
-      payment_method: donation.payment_method,
-      status: donation.status,
-    });
     setOpenDialog(true);
   };
 
@@ -85,6 +79,27 @@ export default function Donations() {
         console.error('Erro ao excluir doação:', error);
         enqueueSnackbar('Erro ao excluir doação', { variant: 'error' });
       }
+    }
+  };
+
+  const handleViewLink = (donation: Donation) => {
+    if (donation.payment_link) {
+      setSelectedLink(donation.payment_link);
+      setOpenLinkDialog(true);
+    } else {
+      enqueueSnackbar('Link de pagamento não disponível', { variant: 'warning' });
+    }
+  };
+
+  const handleSendLink = async (donation: Donation) => {
+    if (!selectedCommunity) return;
+    
+    try {
+      await donationService.sendPaymentLink(selectedCommunity.id, donation.id);
+      enqueueSnackbar('Link de pagamento enviado com sucesso', { variant: 'success' });
+    } catch (error) {
+      console.error('Erro ao enviar link de pagamento:', error);
+      enqueueSnackbar('Erro ao enviar link de pagamento', { variant: 'error' });
     }
   };
 
@@ -167,23 +182,55 @@ export default function Donations() {
       field: 'actions',
       type: 'actions',
       headerName: 'Ações',
-      width: 100,
+      width: 160,
       align: 'center',
       headerAlign: 'center',
-      getActions: (params) => getGridActions({
-        onEdit: () => handleEdit(params.row),
-        onDelete: () => handleDelete(params.row),
-      }),
+      getActions: (params) => [
+        ...getGridActions({
+          onEdit: () => handleEdit(params.row),
+          onDelete: () => handleDelete(params.row),
+        }),
+        <IconButton
+          key="link"
+          onClick={() => handleViewLink(params.row)}
+          title="Ver Link de Pagamento"
+          color="primary"
+          size="small"
+        >
+          <LinkIcon />
+        </IconButton>,
+        <IconButton
+          key="email"
+          onClick={() => handleSendLink(params.row)}
+          title="Enviar Link por E-mail"
+          color="primary"
+          size="small"
+        >
+          <EmailIcon />
+        </IconButton>,
+      ],
     },
   ];
+
+  const loadCampaigns = async () => {
+    if (!selectedCommunity) return;
+    
+    try {
+      const data = await donationService.listCampaigns(selectedCommunity.id);
+      setCampaigns(data || []);
+    } catch (error) {
+      console.error('Erro ao carregar campanhas:', error);
+      enqueueSnackbar('Erro ao carregar campanhas', { variant: 'error' });
+    }
+  };
 
   const loadDonations = async () => {
     if (!selectedCommunity) return;
     
     try {
       setLoading(true);
-      const response = await donationService.listDonations(selectedCommunity.id);
-      setDonations(response.data);
+      const data = await donationService.listDonations(selectedCommunity.id);
+      setDonations(data || []);
     } catch (error) {
       console.error('Erro ao carregar doações:', error);
       enqueueSnackbar('Erro ao carregar doações', { variant: 'error' });
@@ -192,24 +239,12 @@ export default function Donations() {
     }
   };
 
-  const loadCampaigns = async () => {
-    if (!selectedCommunity) return;
-    
-    try {
-      const response = await donationService.listCampaigns(selectedCommunity.id);
-      setCampaigns(response.data);
-    } catch (error) {
-      console.error('Erro ao carregar campanhas:', error);
-    }
-  };
-
   useEffect(() => {
     loadDonations();
     loadCampaigns();
   }, [selectedCommunity]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (formData: any) => {
     if (!selectedCommunity) return;
 
     try {
@@ -222,18 +257,11 @@ export default function Donations() {
       }
       setOpenDialog(false);
       setSelectedDonation(null);
-      setFormData({ campaign_id: '', amount: 0, payment_method: '', status: 'pending' });
       loadDonations();
     } catch (error) {
       console.error('Erro ao salvar doação:', error);
       enqueueSnackbar('Erro ao salvar doação', { variant: 'error' });
     }
-  };
-
-  const handleCloseDialog = () => {
-    setOpenDialog(false);
-    setSelectedDonation(null);
-    setFormData({ campaign_id: '', amount: 0, payment_method: '', status: 'pending' });
   };
 
   return (
@@ -268,79 +296,37 @@ export default function Donations() {
         </CardContent>
       </Card>
 
-      <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
-        <form onSubmit={handleSubmit}>
-          <DialogTitle>
-            {selectedDonation ? 'Editar Doação' : 'Nova Doação'}
-          </DialogTitle>
-          <DialogContent>
-            <Grid container spacing={2} sx={{ mt: 1 }}>
-              <Grid item xs={12}>
-                <TextField
-                  select
-                  label="Campanha"
-                  fullWidth
-                  value={formData.campaign_id}
-                  onChange={(e) => setFormData({ ...formData, campaign_id: e.target.value })}
-                >
-                  <MenuItem value="">Doação Avulsa</MenuItem>
-                  {campaigns.map((campaign) => (
-                    <MenuItem key={campaign.id} value={campaign.id}>
-                      {campaign.name}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  label="Valor (R$)"
-                  fullWidth
-                  required
-                  type="number"
-                  value={formData.amount}
-                  onChange={(e) => setFormData({ ...formData, amount: Number(e.target.value) })}
-                  inputProps={{ min: 0, step: 0.01 }}
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  select
-                  label="Forma de Pagamento"
-                  fullWidth
-                  required
-                  value={formData.payment_method}
-                  onChange={(e) => setFormData({ ...formData, payment_method: e.target.value })}
-                >
-                  {paymentMethods.map((method) => (
-                    <MenuItem key={method.value} value={method.value}>
-                      {method.label}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  select
-                  label="Status"
-                  fullWidth
-                  required
-                  value={formData.status}
-                  onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                >
-                  {Object.entries(statusLabels).map(([value, label]) => (
-                    <MenuItem key={value} value={value}>
-                      {label}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              </Grid>
-            </Grid>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={handleCloseDialog}>Cancelar</Button>
-            <Button type="submit" variant="contained">Salvar</Button>
-          </DialogActions>
-        </form>
+      <DonationForm
+        open={openDialog}
+        onClose={() => {
+          setOpenDialog(false);
+          setSelectedDonation(null);
+        }}
+        onSubmit={handleSubmit}
+        campaigns={campaigns}
+        communityId={selectedCommunity?.id || ''}
+        initialData={selectedDonation}
+      />
+
+      <Dialog open={openLinkDialog} onClose={() => setOpenLinkDialog(false)}>
+        <DialogTitle>Link de Pagamento</DialogTitle>
+        <DialogContent>
+          <Link href={selectedLink} target="_blank" rel="noopener noreferrer">
+            {selectedLink}
+          </Link>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenLinkDialog(false)}>Fechar</Button>
+          <Button
+            variant="contained"
+            onClick={() => {
+              navigator.clipboard.writeText(selectedLink);
+              enqueueSnackbar('Link copiado para a área de transferência', { variant: 'success' });
+            }}
+          >
+            Copiar Link
+          </Button>
+        </DialogActions>
       </Dialog>
     </Box>
   );

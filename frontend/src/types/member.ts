@@ -8,7 +8,8 @@ export interface Member {
   userId: string;
   name: string;
   email: string;
-  phone?: string;
+  phone: string;
+  cpf: string;
   role: string;
   type: string;
   status: string;
@@ -18,6 +19,9 @@ export interface Member {
   maritalStatus?: string;
   occupation?: string;
   address?: string;
+  number?: string;
+  complement?: string;
+  neighborhood?: string;
   city?: string;
   state?: string;
   country?: string;
@@ -56,6 +60,13 @@ export interface Member {
   notifyByWhatsApp?: boolean;
   allowPhotos?: boolean;
   isSubscribedToNewsletter?: boolean;
+
+  // Campos de participação
+  lastAttendanceAt?: string;
+  attendanceCount?: number;
+  lastContributionAt?: string;
+  contributionCount?: number;
+  totalContributions?: number;
 
   // Relacionamentos
   community?: Community;

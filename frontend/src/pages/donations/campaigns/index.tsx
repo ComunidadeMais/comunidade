@@ -36,7 +36,7 @@ export default function Campaigns() {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    goal_amount: 0,
+    goal: 0,
     start_date: '',
     end_date: '',
   });
@@ -46,7 +46,7 @@ export default function Campaigns() {
     setFormData({
       name: campaign.name,
       description: campaign.description || '',
-      goal_amount: campaign.goal_amount,
+      goal: campaign.goal,
       start_date: format(new Date(campaign.start_date), 'yyyy-MM-dd'),
       end_date: format(new Date(campaign.end_date), 'yyyy-MM-dd'),
     });
@@ -84,7 +84,7 @@ export default function Campaigns() {
       headerAlign: 'left',
     },
     {
-      field: 'goal_amount',
+      field: 'Goal',
       headerName: 'Meta',
       width: 150,
       align: 'right',
@@ -155,8 +155,8 @@ export default function Campaigns() {
     
     try {
       setLoading(true);
-      const response = await donationService.listCampaigns(selectedCommunity.id);
-      setCampaigns(response.data);
+      const campaigns = await donationService.listCampaigns(selectedCommunity.id);
+      setCampaigns(campaigns);
     } catch (error) {
       console.error('Erro ao carregar campanhas:', error);
       enqueueSnackbar('Erro ao carregar campanhas', { variant: 'error' });
@@ -174,16 +174,24 @@ export default function Campaigns() {
     if (!selectedCommunity) return;
 
     try {
+      const formattedData = {
+        name: formData.name,
+        description: formData.description,
+        goal: formData.goal,
+        start_date: `${formData.start_date}T00:00:00Z`,
+        end_date: `${formData.end_date}T23:59:59Z`,
+      };
+
       if (selectedCampaign) {
-        await donationService.updateCampaign(selectedCommunity.id, selectedCampaign.id, formData);
+        await donationService.updateCampaign(selectedCommunity.id, selectedCampaign.id, formattedData);
         enqueueSnackbar('Campanha atualizada com sucesso', { variant: 'success' });
       } else {
-        await donationService.createCampaign(selectedCommunity.id, formData);
+        await donationService.createCampaign(selectedCommunity.id, formattedData);
         enqueueSnackbar('Campanha criada com sucesso', { variant: 'success' });
       }
       setOpenDialog(false);
       setSelectedCampaign(null);
-      setFormData({ name: '', description: '', goal_amount: 0, start_date: '', end_date: '' });
+      setFormData({ name: '', description: '', goal: 0, start_date: '', end_date: '' });
       loadCampaigns();
     } catch (error) {
       console.error('Erro ao salvar campanha:', error);
@@ -194,7 +202,7 @@ export default function Campaigns() {
   const handleCloseDialog = () => {
     setOpenDialog(false);
     setSelectedCampaign(null);
-    setFormData({ name: '', description: '', goal_amount: 0, start_date: '', end_date: '' });
+    setFormData({ name: '', description: '', goal: 0, start_date: '', end_date: '' });
   };
 
   return (
@@ -261,8 +269,8 @@ export default function Campaigns() {
                   fullWidth
                   required
                   type="number"
-                  value={formData.goal_amount}
-                  onChange={(e) => setFormData({ ...formData, goal_amount: Number(e.target.value) })}
+                  value={formData.goal}
+                  onChange={(e) => setFormData({ ...formData, goal: Number(e.target.value) })}
                   inputProps={{ min: 0, step: 0.01 }}
                 />
               </Grid>

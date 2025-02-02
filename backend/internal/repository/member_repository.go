@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 
 	"github.com/comunidade/backend/internal/domain"
 	"go.uber.org/zap"
@@ -17,6 +18,9 @@ type MemberRepository interface {
 	FindByEmail(ctx context.Context, communityID, email string) (*domain.Member, error)
 	FindByEmailOrPhone(ctx context.Context, communityID, search string) (*domain.Member, error)
 	List(ctx context.Context, communityID string, filter *Filter) ([]*domain.Member, int64, error)
+	FindByFamilyID(ctx context.Context, communityID, familyID string) ([]*domain.Member, error)
+	FindByGroupID(ctx context.Context, communityID, groupID string) ([]*domain.Member, error)
+	FindByCPF(ctx context.Context, communityID string, cpf string) (*domain.Member, error)
 }
 
 type memberRepository struct {
@@ -135,4 +139,38 @@ func (r *memberRepository) List(ctx context.Context, communityID string, filter 
 	}
 
 	return members, total, nil
+}
+
+func (r *memberRepository) FindByFamilyID(ctx context.Context, communityID, familyID string) ([]*domain.Member, error) {
+	var members []*domain.Member
+	if err := r.GetDB().WithContext(ctx).
+		Where("community_id = ? AND family_id = ?", communityID, familyID).
+		Find(&members).Error; err != nil {
+		return nil, err
+	}
+	return members, nil
+}
+
+func (r *memberRepository) FindByGroupID(ctx context.Context, communityID, groupID string) ([]*domain.Member, error) {
+	var members []*domain.Member
+	if err := r.GetDB().WithContext(ctx).
+		Joins("JOIN group_members ON group_members.member_id = members.id").
+		Where("members.community_id = ? AND group_members.group_id = ?", communityID, groupID).
+		Find(&members).Error; err != nil {
+		return nil, err
+	}
+	return members, nil
+}
+
+// FindByCPF busca um membro pelo CPF em uma determinada comunidade
+func (r *memberRepository) FindByCPF(ctx context.Context, communityID string, cpf string) (*domain.Member, error) {
+	var member domain.Member
+	result := r.GetDB().WithContext(ctx).Where("community_id = ? AND cpf = ?", communityID, cpf).First(&member)
+	if result.Error != nil {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, result.Error
+	}
+	return &member, nil
 }

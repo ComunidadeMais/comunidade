@@ -15,6 +15,7 @@ type Member struct {
 	Name             string    `json:"name" gorm:"not null"`
 	Email            string    `json:"email" gorm:"not null"`
 	Phone            string    `json:"phone" gorm:"type:varchar(20)"`
+	CPF              string    `json:"cpf" gorm:"type:varchar(14)"`
 	Role             string    `json:"role" gorm:"not null;default:member;check:role IN ('member', 'leader', 'admin')"`
 	Status           string    `json:"status" gorm:"not null;default:pending;check:status IN ('pending', 'active', 'inactive', 'blocked')"`
 	Type             string    `json:"type" gorm:"not null;default:regular;check:type IN ('regular', 'visitor', 'transferred')"`
@@ -31,6 +32,7 @@ type Member struct {
 	Notes            string    `json:"notes" gorm:"type:text"`
 	EmergencyContact string    `json:"emergency_contact" gorm:"type:varchar(100)"`
 	EmergencyPhone   string    `json:"emergency_phone" gorm:"type:varchar(20)"`
+	AsaasCustomerID  string    `json:"asaas_customer_id" gorm:"type:varchar(100)"`
 	CreatedAt        time.Time `json:"created_at" gorm:"not null"`
 	UpdatedAt        time.Time `json:"updated_at" gorm:"not null"`
 
@@ -85,6 +87,10 @@ type Member struct {
 	Spouse    *Member    `json:"spouse,omitempty" gorm:"foreignKey:SpouseID"`
 	Parent    *Member    `json:"parent,omitempty" gorm:"foreignKey:ParentID"`
 	Children  []*Member  `json:"children,omitempty" gorm:"foreignKey:ParentID"`
+
+	// Novos campos adicionados
+	Number       string `json:"number" gorm:"type:varchar(20)"`
+	Neighborhood string `json:"neighborhood" gorm:"type:varchar(100)"`
 }
 
 // BeforeCreate é chamado antes de criar um novo membro

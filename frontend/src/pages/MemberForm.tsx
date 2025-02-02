@@ -60,6 +60,56 @@ function TabPanel(props: TabPanelProps) {
   );
 }
 
+interface MemberResponse {
+  user_id: string;
+  name: string;
+  email: string;
+  phone: string;
+  cpf: string;
+  role: string;
+  type: string;
+  status: string;
+  join_date: string;
+  birth_date: string;
+  gender: string;
+  marital_status: string;
+  occupation: string;
+  address: string;
+  number: string;
+  complement: string;
+  neighborhood: string;
+  city: string;
+  state: string;
+  country: string;
+  zip_code: string;
+  notes: string;
+  emergency_contact: string;
+  emergency_phone: string;
+  ministry: string;
+  ministry_role: string;
+  ministry_start_date: string;
+  is_volunteer: boolean;
+  skills: string[];
+  interests: string[];
+  baptism_date: string;
+  baptism_location: string;
+  membership_date: string;
+  membership_type: string;
+  previous_church: string;
+  transferred_from: string;
+  transferred_to: string;
+  transfer_date: string;
+  notify_by_email: boolean;
+  notify_by_phone: boolean;
+  notify_by_whatsapp: boolean;
+  allow_photos: boolean;
+  is_subscribed_to_newsletter: boolean;
+}
+
+interface ApiResponse {
+  member: MemberResponse;
+}
+
 const MemberForm: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -73,15 +123,19 @@ const MemberForm: React.FC = () => {
     name: '',
     email: '',
     phone: '',
+    cpf: '',
     role: 'member',
     type: 'regular',
     status: 'pending',
-    joinDate: new Date().toISOString(),
+    joinDate: new Date().toISOString().split('T')[0],
     birthDate: '',
     gender: '',
     maritalStatus: '',
     occupation: '',
     address: '',
+    number: '',
+    complement: '',
+    neighborhood: '',
     city: '',
     state: '',
     country: '',
@@ -111,6 +165,8 @@ const MemberForm: React.FC = () => {
     allowPhotos: true,
     isSubscribedToNewsletter: true
   });
+  const [loadingCep, setLoadingCep] = useState(false);
+  const [cepError, setCepError] = useState('');
 
   useEffect(() => {
     const loadUser = async () => {
@@ -142,12 +198,16 @@ const MemberForm: React.FC = () => {
       setError(null);
       try {
         // Carrega os dados do membro
-        const memberResponse = await MemberService.getMember(activeCommunity.id, id!);
-        console.log('Dados do membro:', memberResponse);
+        const response = await MemberService.getMember(activeCommunity.id, id!);
+        console.log('Response completo:', response);
         
-        if (!memberResponse) {
+        if (!response?.member) {
+          console.error('Resposta inválida:', response);
           throw new Error('Dados do membro não encontrados');
         }
+
+        const memberResponse = response.member;
+        console.log('Dados do membro formatados:', memberResponse);
 
         // Carrega os dados da família do membro
         let familyData = null;
@@ -170,6 +230,7 @@ const MemberForm: React.FC = () => {
           name: memberResponse.name || '',
           email: memberResponse.email || '',
           phone: memberResponse.phone || '',
+          cpf: memberResponse.cpf || '',
           role: memberResponse.role || 'member',
           type: memberResponse.type || 'regular',
           status: memberResponse.status || 'active',
@@ -189,6 +250,9 @@ const MemberForm: React.FC = () => {
           
           // Endereço
           address: memberResponse.address || '',
+          number: memberResponse.number || '',
+          complement: memberResponse.complement || '',
+          neighborhood: memberResponse.neighborhood || '',
           city: memberResponse.city || '',
           state: memberResponse.state || '',
           country: memberResponse.country || '',
@@ -258,10 +322,77 @@ const MemberForm: React.FC = () => {
     loadFamilies();
   }, [activeCommunity]);
 
+  const handleCepBlur = async (e: React.FocusEvent<HTMLInputElement>) => {
+    const cep = e.target.value.replace(/\D/g, '');
+    if (cep.length !== 8) {
+      setCepError('CEP deve ter 8 dígitos');
+      return;
+    }
+
+    setLoadingCep(true);
+    setCepError('');
+
+    try {
+      const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+      const data = await response.json();
+
+      if (data.erro) {
+        setCepError('CEP não encontrado');
+        return;
+      }
+
+      setFormData(prev => ({
+        ...prev,
+        address: data.logradouro || '',
+        neighborhood: data.bairro || '',
+        city: data.localidade || '',
+        state: data.uf || ''
+      }));
+    } catch (error) {
+      setCepError('Erro ao buscar CEP');
+    } finally {
+      setLoadingCep(false);
+    }
+  };
+
+  const validateForm = () => {
+    const requiredFields = {
+      name: 'Nome',
+      email: 'E-mail',
+      phone: 'Telefone',
+      cpf: 'CPF',
+      zipCode: 'CEP',
+      address: 'Endereço',
+      number: 'Número',
+      neighborhood: 'Bairro',
+      city: 'Cidade',
+      state: 'Estado'
+    };
+
+    const errors: string[] = [];
+
+    Object.entries(requiredFields).forEach(([field, label]) => {
+      if (!formData[field as keyof typeof formData]) {
+        errors.push(`${label} é obrigatório`);
+      }
+    });
+
+    if (errors.length > 0) {
+      setError(errors.join('\n'));
+      return false;
+    }
+
+    return true;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!activeCommunity) return;
     
+    if (!validateForm()) {
+      return;
+    }
+
     if (!id && !formData.userId) {
       setError('Erro: ID do usuário não encontrado. Por favor, recarregue a página.');
       return;
@@ -272,6 +403,7 @@ const MemberForm: React.FC = () => {
       name: formData.name,
       email: formData.email,
       phone: formData.phone || "",
+      cpf: formData.cpf || "",
       role: formData.role || "member",
       type: formData.type || "regular",
       status: formData.status || "active",
@@ -281,6 +413,8 @@ const MemberForm: React.FC = () => {
       marital_status: formData.maritalStatus || "",
       occupation: formData.occupation || "",
       address: formData.address || "",
+      number: formData.number || "",
+      neighborhood: formData.neighborhood || "",
       city: formData.city || "",
       state: formData.state || "",
       country: formData.country || "",
@@ -425,7 +559,7 @@ const MemberForm: React.FC = () => {
               scrollButtons="auto"
             >
               <Tab label="Informações Básicas" />
-              <Tab label="Contato e Endereço" />
+              <Tab label="Endereço" />
               <Tab label="Igreja" />
               <Tab label="Família" />
               <Tab label="Ministério" />
@@ -439,32 +573,51 @@ const MemberForm: React.FC = () => {
                 <Grid container spacing={2}>
                   <Grid item xs={12} md={6}>
                     <TextField
+                      required
                       fullWidth
                       label="Nome"
                       name="name"
-                      value={formData.name}
+                      value={formData.name || ''}
                       onChange={handleChange}
-                      required
+                      error={!!error && !formData.name}
+                      helperText={!!error && !formData.name ? 'Nome é obrigatório' : ''}
                     />
                   </Grid>
                   <Grid item xs={12} md={6}>
                     <TextField
+                      required
                       fullWidth
-                      label="Email"
+                      label="CPF"
+                      name="cpf"
+                      value={formData.cpf || ''}
+                      onChange={handleChange}
+                      error={!!error && !formData.cpf}
+                      helperText={!!error && !formData.cpf ? 'CPF é obrigatório' : ''}
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      required
+                      fullWidth
+                      label="E-mail"
                       name="email"
                       type="email"
-                      value={formData.email}
+                      value={formData.email || ''}
                       onChange={handleChange}
-                      required
+                      error={!!error && !formData.email}
+                      helperText={!!error && !formData.email ? 'E-mail é obrigatório' : ''}
                     />
                   </Grid>
                   <Grid item xs={12} md={6}>
                     <TextField
+                      required
                       fullWidth
                       label="Telefone"
                       name="phone"
-                      value={formData.phone}
+                      value={formData.phone || ''}
                       onChange={handleChange}
+                      error={!!error && !formData.phone}
+                      helperText={!!error && !formData.phone ? 'Telefone é obrigatório' : ''}
                     />
                   </Grid>
                   <Grid item xs={12} md={6}>
@@ -560,53 +713,95 @@ const MemberForm: React.FC = () => {
 
               <TabPanel value={tabValue} index={1}>
                 <Grid container spacing={2}>
-                  <Grid item xs={12}>
-                    <TextField
-                      fullWidth
-                      label="Endereço"
-                      name="address"
-                      value={formData.address}
-                      onChange={handleChange}
-                    />
-                  </Grid>
                   <Grid item xs={12} sm={6}>
                     <TextField
-                      fullWidth
-                      label="Cidade"
-                      name="city"
-                      value={formData.city}
-                      onChange={handleChange}
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <TextField
-                      fullWidth
-                      label="Estado"
-                      name="state"
-                      value={formData.state}
-                      onChange={handleChange}
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <TextField
-                      fullWidth
-                      label="País"
-                      name="country"
-                      value={formData.country}
-                      onChange={handleChange}
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <TextField
+                      required
                       fullWidth
                       label="CEP"
                       name="zipCode"
-                      value={formData.zipCode}
+                      value={formData.zipCode || ''}
                       onChange={handleChange}
+                      onBlur={handleCepBlur}
+                      error={!!cepError || (!!error && !formData.zipCode)}
+                      helperText={cepError || (!!error && !formData.zipCode ? 'CEP é obrigatório' : '')}
+                      InputProps={{
+                        endAdornment: loadingCep && <CircularProgress size={20} />
+                      }}
                     />
                   </Grid>
                   <Grid item xs={12}>
-                    <Divider sx={{ my: 2 }} />
+                    <TextField
+                      required
+                      fullWidth
+                      label="Endereço"
+                      name="address"
+                      value={formData.address || ''}
+                      onChange={handleChange}
+                      error={!!error && !formData.address}
+                      helperText={!!error && !formData.address ? 'Endereço é obrigatório' : ''}
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      required
+                      fullWidth
+                      label="Número"
+                      name="number"
+                      value={formData.number || ''}
+                      onChange={handleChange}
+                      error={!!error && !formData.number}
+                      helperText={!!error && !formData.number ? 'Número é obrigatório' : ''}
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      fullWidth
+                      label="Complemento"
+                      name="complement"
+                      value={formData.complement || ''}
+                      onChange={handleChange}
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      required
+                      fullWidth
+                      label="Bairro"
+                      name="neighborhood"
+                      value={formData.neighborhood || ''}
+                      onChange={handleChange}
+                      error={!!error && !formData.neighborhood}
+                      helperText={!!error && !formData.neighborhood ? 'Bairro é obrigatório' : ''}
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      required
+                      fullWidth
+                      label="Cidade"
+                      name="city"
+                      value={formData.city || ''}
+                      onChange={handleChange}
+                      error={!!error && !formData.city}
+                      helperText={!!error && !formData.city ? 'Cidade é obrigatório' : ''}
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      required
+                      fullWidth
+                      label="Estado"
+                      name="state"
+                      value={formData.state || ''}
+                      onChange={handleChange}
+                      error={!!error && !formData.state}
+                      helperText={!!error && !formData.state ? 'Estado é obrigatório' : ''}
+                    />
+                  </Grid>
+                </Grid>
+
+                <Grid container spacing={2} sx={{ mt: 2 }}>
+                  <Grid item xs={12}>
                     <Typography variant="subtitle1" gutterBottom>
                       Contato de Emergência
                     </Typography>
@@ -616,7 +811,7 @@ const MemberForm: React.FC = () => {
                       fullWidth
                       label="Nome do Contato de Emergência"
                       name="emergencyContact"
-                      value={formData.emergencyContact}
+                      value={formData.emergencyContact || ''}
                       onChange={handleChange}
                     />
                   </Grid>
@@ -625,7 +820,7 @@ const MemberForm: React.FC = () => {
                       fullWidth
                       label="Telefone de Emergência"
                       name="emergencyPhone"
-                      value={formData.emergencyPhone}
+                      value={formData.emergencyPhone || ''}
                       onChange={handleChange}
                     />
                   </Grid>

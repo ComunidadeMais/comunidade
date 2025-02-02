@@ -42,20 +42,22 @@ type Campaign struct {
 
 // Donation representa uma doação única ou recorrente
 type Donation struct {
-	ID            string     `json:"id" gorm:"primaryKey;type:uuid"`
-	CommunityID   string     `json:"community_id" gorm:"type:uuid;not null"`
-	UserID        string     `json:"user_id" gorm:"type:uuid;not null"`
-	MemberID      *string    `json:"member_id" gorm:"type:uuid"`
-	CampaignID    string     `json:"campaign_id" gorm:"type:uuid"`
-	Amount        float64    `json:"amount" gorm:"not null"`
-	PaymentMethod string     `json:"payment_method" gorm:"not null;check:payment_method IN ('credit_card', 'boleto', 'pix')"`
-	DueDate       time.Time  `json:"due_date" gorm:"not null"`
-	Description   string     `json:"description"`
-	Status        string     `json:"status" gorm:"not null;default:'pending';check:status IN ('pending', 'paid', 'cancelled', 'failed')"`
-	AsaasID       string     `json:"asaas_id"`
-	PaidAt        *time.Time `json:"paid_at"`
-	CreatedAt     time.Time  `json:"created_at" gorm:"not null"`
-	UpdatedAt     time.Time  `json:"updated_at" gorm:"not null"`
+	ID             string     `json:"id" gorm:"primaryKey;type:uuid"`
+	CommunityID    string     `json:"community_id" gorm:"type:uuid;not null"`
+	UserID         string     `json:"user_id" gorm:"type:uuid;not null"`
+	MemberID       *string    `json:"member_id" gorm:"type:uuid"`
+	CampaignID     string     `json:"campaign_id" gorm:"type:uuid"`
+	Amount         float64    `json:"amount" gorm:"not null"`
+	PaymentMethod  string     `json:"payment_method" gorm:"not null;check:payment_method IN ('credit_card', 'boleto', 'pix')"`
+	DueDate        time.Time  `json:"due_date" gorm:"not null"`
+	Description    string     `json:"description"`
+	Status         string     `json:"status" gorm:"not null;default:'pending';check:status IN ('pending', 'paid', 'cancelled', 'failed')"`
+	AsaasID        string     `json:"asaas_id"`
+	PaidAt         *time.Time `json:"paid_at"`
+	CreatedAt      time.Time  `json:"created_at" gorm:"not null"`
+	UpdatedAt      time.Time  `json:"updated_at" gorm:"not null"`
+	AsaasPaymentID string     `json:"asaas_payment_id" gorm:"type:varchar(100)"`
+	PaymentLink    string     `json:"payment_link" gorm:"type:varchar(255)"`
 
 	CustomerName  string `json:"customer_name" gorm:"not null"`
 	CustomerCPF   string `json:"customer_cpf" gorm:"not null"`

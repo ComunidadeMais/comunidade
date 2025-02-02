@@ -26,6 +26,9 @@ func InitDonationRoutes(router *gin.RouterGroup, h RouteHandler) {
 		// Doações únicas
 		donations.POST("/donations", h.AddDonation)
 		donations.GET("/donations", h.ListDonations)
+		donations.PUT("/donations/:donationId", h.UpdateDonation)
+		donations.DELETE("/donations/:donationId", h.DeleteDonation)
+		donations.POST("/donations/:donationId/send-payment-link", h.SendPaymentLink)
 
 		// Doações recorrentes
 		donations.POST("/recurring", h.AddRecurringDonation)

@@ -21,6 +21,7 @@ type AddMemberRequest struct {
 	Name             string    `json:"name" binding:"required,min=3"`
 	Email            string    `json:"email" binding:"required,email"`
 	Phone            string    `json:"phone"`
+	CPF              string    `json:"cpf"`
 	Role             string    `json:"role" binding:"required,oneof=member admin"`
 	Type             string    `json:"type" binding:"required,oneof=regular visitor transferred"`
 	Status           string    `json:"status" binding:"required,oneof=pending active inactive blocked"`
@@ -30,6 +31,8 @@ type AddMemberRequest struct {
 	MaritalStatus    string    `json:"marital_status"`
 	Occupation       string    `json:"occupation"`
 	Address          string    `json:"address"`
+	Number           string    `json:"number"`
+	Neighborhood     string    `json:"neighborhood"`
 	City             string    `json:"city"`
 	State            string    `json:"state"`
 	Country          string    `json:"country"`
@@ -71,6 +74,7 @@ type UpdateMemberRequest struct {
 	Name             string    `json:"name" binding:"required,min=3"`
 	Email            string    `json:"email" binding:"required,email"`
 	Phone            string    `json:"phone"`
+	CPF              string    `json:"cpf"`
 	Role             string    `json:"role" binding:"required,oneof=member leader admin"`
 	Type             string    `json:"type" binding:"required,oneof=regular visitor transferred"`
 	Status           string    `json:"status" binding:"required,oneof=pending active inactive blocked"`
@@ -80,6 +84,8 @@ type UpdateMemberRequest struct {
 	MaritalStatus    string    `json:"marital_status"`
 	Occupation       string    `json:"occupation"`
 	Address          string    `json:"address"`
+	Number           string    `json:"number"`
+	Neighborhood     string    `json:"neighborhood"`
 	City             string    `json:"city"`
 	State            string    `json:"state"`
 	Country          string    `json:"country"`
@@ -398,6 +404,7 @@ func (h *Handler) UpdateMember(c *gin.Context) {
 	member.Name = req.Name
 	member.Email = req.Email
 	member.Phone = req.Phone
+	member.CPF = req.CPF
 	member.Role = req.Role
 	member.Type = req.Type
 	member.Status = req.Status
@@ -412,6 +419,8 @@ func (h *Handler) UpdateMember(c *gin.Context) {
 	member.MaritalStatus = req.MaritalStatus
 	member.Occupation = req.Occupation
 	member.Address = req.Address
+	member.Number = req.Number
+	member.Neighborhood = req.Neighborhood
 	member.City = req.City
 	member.State = req.State
 	member.Country = req.Country

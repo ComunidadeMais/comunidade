@@ -26,6 +26,37 @@ interface FamilyResponse {
   family_members: Member[];
 }
 
+interface ApiMember {
+  user_id: string;
+  join_date: string;
+  birth_date: string;
+  ministry_start_date: string;
+  baptism_date: string;
+  membership_date: string;
+  transfer_date: string;
+  marital_status: string;
+  zip_code: string;
+  emergency_contact: string;
+  emergency_phone: string;
+  ministry_role: string;
+  is_volunteer: boolean;
+  baptism_location: string;
+  membership_type: string;
+  previous_church: string;
+  transferred_from: string;
+  transferred_to: string;
+  notify_by_email: boolean;
+  notify_by_phone: boolean;
+  notify_by_whatsapp: boolean;
+  allow_photos: boolean;
+  is_subscribed_to_newsletter: boolean;
+  [key: string]: any; // para outros campos que mantêm o mesmo nome
+}
+
+interface ApiResponse {
+  member: ApiMember;
+}
+
 export const MemberService = {
   async listMembers(communityId: string, params?: ListMembersParams) {
     const response = await api.get<MemberResponse>(`/communities/${communityId}/members`, {
@@ -38,9 +69,9 @@ export const MemberService = {
     return response.data;
   },
 
-  async getMember(communityId: string, memberId: string) {
-    const response = await api.get<SingleMemberResponse>(`/communities/${communityId}/members/${memberId}`);
-    return response.data.member;
+  getMember: async (communityId: string, memberId: string): Promise<ApiResponse> => {
+    const response = await api.get(`/communities/${communityId}/members/${memberId}`);
+    return response.data;
   },
 
   getFamilyMember: async (communityId: string, memberId: string) => {

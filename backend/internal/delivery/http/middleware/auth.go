@@ -81,6 +81,7 @@ func Auth(repos *repository.Repositories, logger *zap.Logger) gin.HandlerFunc {
 
 		// Adiciona o usuário ao contexto
 		c.Set("user", user)
+		c.Set("userId", userID)
 		c.Next()
 	}
 }

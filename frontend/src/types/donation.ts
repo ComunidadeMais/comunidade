@@ -2,11 +2,21 @@ export interface Campaign {
   id: string;
   name: string;
   description?: string;
-  goal_amount: number;
+  goal: number;
   start_date: string;
   end_date: string;
   created_at: string;
   updated_at: string;
+}
+
+export interface BillingAddress {
+  street: string;
+  number: string;
+  complement?: string;
+  district: string;
+  city: string;
+  state: string;
+  zip_code: string;
 }
 
 export interface Donation {
@@ -16,9 +26,17 @@ export interface Donation {
   amount: number;
   payment_method: string;
   status: string;
+  due_date: string;
+  description: string;
+  customer_name: string;
+  customer_cpf: string;
+  customer_email: string;
+  customer_phone: string;
+  billing_address: BillingAddress;
   payment_date?: string;
   created_at: string;
   updated_at: string;
+  payment_link?: string;
 }
 
 export interface RecurringDonation {

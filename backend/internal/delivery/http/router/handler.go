@@ -134,6 +134,9 @@ type RouteHandler interface {
 	// Donations
 	AddDonation(c *gin.Context)
 	ListDonations(c *gin.Context)
+	UpdateDonation(c *gin.Context)
+	DeleteDonation(c *gin.Context)
+	SendPaymentLink(c *gin.Context)
 	AddRecurringDonation(c *gin.Context)
 	ListRecurringDonations(c *gin.Context)
 
