@@ -3,10 +3,10 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/comunidade/backend/internal/domain"
-	"github.com/comunidade/backend/internal/email"
 	"github.com/comunidade/backend/internal/repository"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
@@ -31,14 +31,16 @@ type CommunicationService interface {
 }
 
 type communicationService struct {
-	repos  *repository.Repositories
-	logger *zap.Logger
+	repos        *repository.Repositories
+	logger       *zap.Logger
+	emailService *EmailService
 }
 
-func NewCommunicationService(repos *repository.Repositories, logger *zap.Logger) CommunicationService {
+func NewCommunicationService(repos *repository.Repositories, logger *zap.Logger) *communicationService {
 	return &communicationService{
-		repos:  repos,
-		logger: logger,
+		repos:        repos,
+		logger:       logger,
+		emailService: NewEmailService(logger),
 	}
 }
 
@@ -91,152 +93,53 @@ func (s *communicationService) DeleteCommunication(ctx context.Context, communit
 }
 
 func (s *communicationService) SendCommunication(ctx context.Context, communityID, communicationID string) error {
-	communication, err := s.GetCommunication(ctx, communityID, communicationID)
+	// Busca a comunicação
+	communication, err := s.repos.Communication.FindByID(ctx, communityID, communicationID)
 	if err != nil {
-		return err
+		return fmt.Errorf("erro ao buscar comunicação: %v", err)
+	}
+	if communication == nil {
+		return fmt.Errorf("comunicação não encontrada")
 	}
 
-	if communication.Status != domain.CommunicationStatusPending {
-		return errors.New("communication already sent")
-	}
-
-	// Buscar configurações de email
-	settings, err := s.repos.Communication.GetSettings(ctx, communityID)
+	// Busca os destinatários
+	recipients, err := s.getRecipients(ctx, communityID, communication)
 	if err != nil {
-		return err
-	}
-	if settings == nil {
-		return errors.New("email settings not found")
+		return fmt.Errorf("erro ao buscar destinatários: %v", err)
 	}
 
-	if !settings.EmailEnabled {
-		return errors.New("email is not enabled")
-	}
-
-	var recipients []*domain.CommunicationRecipient
-
-	// Buscar destinatários com base no tipo
-	switch communication.RecipientType {
-	case domain.RecipientTypeMember:
-		member, err := s.repos.Member.FindByID(ctx, communityID, communication.RecipientID)
-		if err != nil {
-			return err
-		}
-		if member == nil {
-			return errors.New("member not found")
-		}
-		recipients = append(recipients, &domain.CommunicationRecipient{
-			ID:              uuid.New().String(),
-			CommunicationID: communication.ID,
-			RecipientType:   domain.RecipientTypeMember,
-			RecipientID:     member.ID,
-			Email:           &member.Email,
-			Status:          domain.CommunicationStatusPending,
-			CreatedAt:       time.Now(),
-			UpdatedAt:       time.Now(),
-		})
-
-	case domain.RecipientTypeGroup:
-		members, err := s.repos.Group.ListMembers(ctx, communication.RecipientID, nil)
-		if err != nil {
-			return err
-		}
-		for _, member := range members {
-			recipients = append(recipients, &domain.CommunicationRecipient{
-				ID:              uuid.New().String(),
-				CommunicationID: communication.ID,
-				RecipientType:   domain.RecipientTypeGroup,
-				RecipientID:     member.ID,
-				Email:           &member.Email,
-				Status:          domain.CommunicationStatusPending,
-				CreatedAt:       time.Now(),
-				UpdatedAt:       time.Now(),
-			})
-		}
-
-	case domain.RecipientTypeFamily:
-		family, err := s.repos.Family.FindByID(ctx, communityID, communication.RecipientID)
-		if err != nil {
-			return err
-		}
-		if family == nil {
-			return errors.New("family not found")
-		}
-
-		// Buscar membros da família
-		members, err := s.repos.Family.ListFamilyMembers(ctx, family.ID)
-		if err != nil {
-			return err
-		}
-
-		for _, member := range members {
-			// Buscar dados do membro
-			memberData, err := s.repos.Member.FindByID(ctx, communityID, member.MemberID)
-			if err != nil {
-				return err
-			}
-			if memberData == nil {
-				continue
-			}
-
-			recipients = append(recipients, &domain.CommunicationRecipient{
-				ID:              uuid.New().String(),
-				CommunicationID: communication.ID,
-				RecipientType:   domain.RecipientTypeFamily,
-				RecipientID:     memberData.ID,
-				Email:           &memberData.Email,
-				Status:          domain.CommunicationStatusPending,
-				CreatedAt:       time.Now(),
-				UpdatedAt:       time.Now(),
-			})
-		}
-	}
-
-	// Configurar o cliente de email
-	mailer := email.NewMailer(&email.Config{
-		Host:     settings.EmailSMTPHost,
-		Port:     settings.EmailSMTPPort,
-		Username: settings.EmailUsername,
-		Password: settings.EmailPassword,
-		From:     settings.EmailFromAddress,
-	})
-
-	// Criar destinatários e enviar emails
+	// Prepara os jobs de email
+	var emailJobs []emailJob
 	for _, recipient := range recipients {
-		// Salvar destinatário
-		if err := s.repos.Communication.CreateRecipient(ctx, recipient); err != nil {
-			return err
+		if recipient.Email == nil || *recipient.Email == "" {
+			continue
 		}
 
-		// Enviar email se houver endereço
-		if recipient.Email != nil && *recipient.Email != "" {
-			err := mailer.SendEmail(*recipient.Email, communication.Subject, map[string]interface{}{
-				"subject": communication.Subject,
-				"content": communication.Content,
-			})
-
-			now := time.Now()
-			if err != nil {
-				recipient.Status = domain.CommunicationStatusFailed
-				errMsg := err.Error()
-				recipient.ErrorMessage = &errMsg
-			} else {
-				recipient.Status = domain.CommunicationStatusSent
-				recipient.SentAt = &now
-			}
-
-			if err := s.repos.Communication.UpdateRecipient(ctx, recipient); err != nil {
-				return err
-			}
-		}
+		emailJobs = append(emailJobs, emailJob{
+			to:      *recipient.Email,
+			subject: communication.Subject,
+			body:    communication.Content,
+		})
 	}
 
-	// Atualizar status da comunicação
-	communication.Status = domain.CommunicationStatusSent
+	// Envia os emails em lote
+	if err := s.emailService.SendEmails(emailJobs); err != nil {
+		s.logger.Error("erro ao enviar emails em lote",
+			zap.Error(err),
+			zap.String("communicationId", communicationID),
+		)
+		// Mesmo com erro, vamos continuar para atualizar o status
+	}
+
+	// Atualiza o status da comunicação
 	now := time.Now()
+	communication.Status = "sent"
 	communication.SentAt = &now
-	communication.UpdatedAt = now
-	return s.repos.Communication.Update(ctx, communication)
+	if err := s.repos.Communication.Update(ctx, communication); err != nil {
+		return fmt.Errorf("erro ao atualizar status da comunicação: %v", err)
+	}
+
+	return nil
 }
 
 func (s *communicationService) CreateTemplate(ctx context.Context, communityID string, template *domain.CommunicationTemplate) error {
@@ -310,4 +213,87 @@ func (s *communicationService) UpdateCommunicationSettings(ctx context.Context, 
 	}
 
 	return s.repos.Communication.UpdateSettings(ctx, settings)
+}
+
+func (s *communicationService) getRecipients(ctx context.Context, communityID string, communication *domain.Communication) ([]*domain.CommunicationRecipient, error) {
+	var recipients []*domain.CommunicationRecipient
+
+	// Buscar destinatários com base no tipo
+	switch communication.RecipientType {
+	case domain.RecipientTypeMember:
+		member, err := s.repos.Member.FindByID(ctx, communityID, communication.RecipientID)
+		if err != nil {
+			return nil, err
+		}
+		if member == nil {
+			return nil, errors.New("member not found")
+		}
+		recipients = append(recipients, &domain.CommunicationRecipient{
+			ID:              uuid.New().String(),
+			CommunicationID: communication.ID,
+			RecipientType:   domain.RecipientTypeMember,
+			RecipientID:     member.ID,
+			Email:           &member.Email,
+			Status:          domain.CommunicationStatusPending,
+			CreatedAt:       time.Now(),
+			UpdatedAt:       time.Now(),
+		})
+
+	case domain.RecipientTypeGroup:
+		members, err := s.repos.Group.ListMembers(ctx, communication.RecipientID, nil)
+		if err != nil {
+			return nil, err
+		}
+		for _, member := range members {
+			recipients = append(recipients, &domain.CommunicationRecipient{
+				ID:              uuid.New().String(),
+				CommunicationID: communication.ID,
+				RecipientType:   domain.RecipientTypeGroup,
+				RecipientID:     member.ID,
+				Email:           &member.Email,
+				Status:          domain.CommunicationStatusPending,
+				CreatedAt:       time.Now(),
+				UpdatedAt:       time.Now(),
+			})
+		}
+
+	case domain.RecipientTypeFamily:
+		family, err := s.repos.Family.FindByID(ctx, communityID, communication.RecipientID)
+		if err != nil {
+			return nil, err
+		}
+		if family == nil {
+			return nil, errors.New("family not found")
+		}
+
+		// Buscar membros da família
+		members, err := s.repos.Family.ListFamilyMembers(ctx, family.ID)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, member := range members {
+			// Buscar dados do membro
+			memberData, err := s.repos.Member.FindByID(ctx, communityID, member.MemberID)
+			if err != nil {
+				return nil, err
+			}
+			if memberData == nil {
+				continue
+			}
+
+			recipients = append(recipients, &domain.CommunicationRecipient{
+				ID:              uuid.New().String(),
+				CommunicationID: communication.ID,
+				RecipientType:   domain.RecipientTypeFamily,
+				RecipientID:     memberData.ID,
+				Email:           &memberData.Email,
+				Status:          domain.CommunicationStatusPending,
+				CreatedAt:       time.Now(),
+				UpdatedAt:       time.Now(),
+			})
+		}
+	}
+
+	return recipients, nil
 }
