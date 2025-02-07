@@ -12,6 +12,12 @@ type RouteHandler interface {
 	ResetPassword(c *gin.Context)
 	ChangePassword(c *gin.Context)
 
+	// Member Auth
+	MemberSignUp(c *gin.Context)
+	MemberLogin(c *gin.Context)
+	MemberForgotPassword(c *gin.Context)
+	MemberResetPassword(c *gin.Context)
+
 	// User
 	GetProfile(c *gin.Context)
 	UpdateProfile(c *gin.Context)
@@ -27,6 +33,7 @@ type RouteHandler interface {
 	DeleteCommunity(c *gin.Context)
 	UploadCommunityLogo(c *gin.Context)
 	UploadCommunityBanner(c *gin.Context)
+	GetPublicCommunityData(c *gin.Context)
 
 	// Member
 	AddMember(c *gin.Context)
@@ -142,4 +149,20 @@ type RouteHandler interface {
 
 	// Webhooks
 	HandleAsaasAccountStatusWebhook(c *gin.Context)
+
+	// Engagement
+	GetMemberDashboard(c *gin.Context)
+	CreatePost(c *gin.Context)
+	GetPost(c *gin.Context)
+	UpdatePost(c *gin.Context)
+	DeletePost(c *gin.Context)
+	ListPosts(c *gin.Context)
+	CreateComment(c *gin.Context)
+	DeleteComment(c *gin.Context)
+	CreateReaction(c *gin.Context)
+	DeleteReaction(c *gin.Context)
+	CreatePrayerRequest(c *gin.Context)
+	UpdatePrayerRequest(c *gin.Context)
+	DeletePrayerRequest(c *gin.Context)
+	ListPrayerRequests(c *gin.Context)
 }

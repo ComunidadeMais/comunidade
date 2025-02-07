@@ -23,6 +23,7 @@ type Services struct {
 	Communication service.CommunicationService
 	CheckIn       service.CheckInService
 	Asaas         *service.AsaasService
+	Engagement    *service.EngagementService
 }
 
 func NewHandler(r *gin.Engine, repos *repository.Repositories, logger *zap.Logger) {
@@ -31,6 +32,7 @@ func NewHandler(r *gin.Engine, repos *repository.Repositories, logger *zap.Logge
 		Communication: service.NewCommunicationService(repos, logger),
 		CheckIn:       service.NewCheckInService(repos.CheckIn, repos.Member, repos.Event),
 		Asaas:         service.NewAsaasService(repos, logger),
+		Engagement:    service.NewEngagementService(repos, logger),
 	}
 
 	h := &Handler{
@@ -71,6 +73,12 @@ type RouteHandler interface {
 	VerifyEmail(c *gin.Context)
 	ResendVerificationEmail(c *gin.Context)
 
+	// Member Auth
+	MemberSignUp(c *gin.Context)
+	MemberLogin(c *gin.Context)
+	MemberForgotPassword(c *gin.Context)
+	MemberResetPassword(c *gin.Context)
+
 	// Communities
 	AddCommunity(c *gin.Context)
 	GetCommunity(c *gin.Context)
@@ -81,6 +89,7 @@ type RouteHandler interface {
 	AddCommunityMember(c *gin.Context)
 	UpdateCommunityMember(c *gin.Context)
 	DeleteCommunityMember(c *gin.Context)
+	GetPublicCommunityData(c *gin.Context)
 
 	// Donations
 	AddAsaasConfig(c *gin.Context)
@@ -101,4 +110,20 @@ type RouteHandler interface {
 
 	// Webhooks
 	HandleAsaasAccountStatusWebhook(c *gin.Context)
+
+	// Engagement
+	GetMemberDashboard(c *gin.Context)
+	CreatePost(c *gin.Context)
+	GetPost(c *gin.Context)
+	UpdatePost(c *gin.Context)
+	DeletePost(c *gin.Context)
+	ListPosts(c *gin.Context)
+	CreateComment(c *gin.Context)
+	DeleteComment(c *gin.Context)
+	CreateReaction(c *gin.Context)
+	DeleteReaction(c *gin.Context)
+	CreatePrayerRequest(c *gin.Context)
+	UpdatePrayerRequest(c *gin.Context)
+	DeletePrayerRequest(c *gin.Context)
+	ListPrayerRequests(c *gin.Context)
 }

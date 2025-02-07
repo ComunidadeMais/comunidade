@@ -4,37 +4,42 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
 type Member struct {
-	ID               string    `json:"id" gorm:"primaryKey;type:uuid"`
-	CommunityID      string    `json:"community_id" gorm:"type:uuid;not null"`
-	UserID           string    `json:"user_id" gorm:"type:uuid"`
-	Photo            string    `json:"photo" gorm:"type:varchar(255)"`
-	Name             string    `json:"name" gorm:"not null"`
-	Email            string    `json:"email" gorm:"not null"`
-	Phone            string    `json:"phone" gorm:"type:varchar(20)"`
-	CPF              string    `json:"cpf" gorm:"type:varchar(14)"`
-	Role             string    `json:"role" gorm:"not null;default:member;check:role IN ('member', 'leader', 'admin')"`
-	Status           string    `json:"status" gorm:"not null;default:pending;check:status IN ('pending', 'active', 'inactive', 'blocked')"`
-	Type             string    `json:"type" gorm:"not null;default:regular;check:type IN ('regular', 'visitor', 'transferred')"`
-	JoinDate         time.Time `json:"join_date" gorm:"not null"`
-	BirthDate        time.Time `json:"birth_date" gorm:"type:date"`
-	Gender           string    `json:"gender" gorm:"type:varchar(20)"`
-	MaritalStatus    string    `json:"marital_status" gorm:"type:varchar(20)"`
-	Occupation       string    `json:"occupation" gorm:"type:varchar(100)"`
-	Address          string    `json:"address" gorm:"type:text"`
-	City             string    `json:"city" gorm:"type:varchar(100)"`
-	State            string    `json:"state" gorm:"type:varchar(100)"`
-	Country          string    `json:"country" gorm:"type:varchar(100)"`
-	ZipCode          string    `json:"zip_code" gorm:"type:varchar(20)"`
-	Notes            string    `json:"notes" gorm:"type:text"`
-	EmergencyContact string    `json:"emergency_contact" gorm:"type:varchar(100)"`
-	EmergencyPhone   string    `json:"emergency_phone" gorm:"type:varchar(20)"`
-	AsaasCustomerID  string    `json:"asaas_customer_id" gorm:"type:varchar(100)"`
-	CreatedAt        time.Time `json:"created_at" gorm:"not null"`
-	UpdatedAt        time.Time `json:"updated_at" gorm:"not null"`
+	ID                 string     `json:"id" gorm:"primaryKey;type:uuid"`
+	CommunityID        string     `json:"community_id" gorm:"type:uuid;not null"`
+	UserID             string     `json:"user_id" gorm:"type:uuid"`
+	Photo              string     `json:"photo" gorm:"type:varchar(255)"`
+	Name               string     `json:"name" gorm:"not null"`
+	Email              string     `json:"email" gorm:"not null"`
+	Phone              string     `json:"phone" gorm:"type:varchar(20)"`
+	CPF                string     `json:"cpf" gorm:"type:varchar(14)"`
+	Password           string     `json:"-" gorm:"type:varchar(255)"`
+	PasswordResetToken string     `json:"-" gorm:"type:varchar(255)"`
+	TokenExpiresAt     *time.Time `json:"-"`
+	LastLogin          *time.Time `json:"last_login"`
+	Role               string     `json:"role" gorm:"not null;default:member;check:role IN ('member', 'leader', 'admin')"`
+	Status             string     `json:"status" gorm:"not null;default:pending;check:status IN ('pending', 'active', 'inactive', 'blocked')"`
+	Type               string     `json:"type" gorm:"not null;default:regular;check:type IN ('regular', 'visitor', 'transferred')"`
+	JoinDate           time.Time  `json:"join_date" gorm:"not null"`
+	BirthDate          time.Time  `json:"birth_date" gorm:"type:date"`
+	Gender             string     `json:"gender" gorm:"type:varchar(20)"`
+	MaritalStatus      string     `json:"marital_status" gorm:"type:varchar(20)"`
+	Occupation         string     `json:"occupation" gorm:"type:varchar(100)"`
+	Address            string     `json:"address" gorm:"type:text"`
+	City               string     `json:"city" gorm:"type:varchar(100)"`
+	State              string     `json:"state" gorm:"type:varchar(100)"`
+	Country            string     `json:"country" gorm:"type:varchar(100)"`
+	ZipCode            string     `json:"zip_code" gorm:"type:varchar(20)"`
+	Notes              string     `json:"notes" gorm:"type:text"`
+	EmergencyContact   string     `json:"emergency_contact" gorm:"type:varchar(100)"`
+	EmergencyPhone     string     `json:"emergency_phone" gorm:"type:varchar(20)"`
+	AsaasCustomerID    string     `json:"asaas_customer_id" gorm:"type:varchar(100)"`
+	CreatedAt          time.Time  `json:"created_at" gorm:"not null"`
+	UpdatedAt          time.Time  `json:"updated_at" gorm:"not null"`
 
 	// Campos de participação
 	LastAttendanceAt   *time.Time `json:"last_attendance_at"`
@@ -180,4 +185,33 @@ func (m *Member) Age() int {
 	}
 
 	return age
+}
+
+func (m *Member) SetPassword(password string) error {
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+	m.Password = string(hashedPassword)
+	return nil
+}
+
+func (m *Member) CheckPassword(password string) bool {
+	err := bcrypt.CompareHashAndPassword([]byte(m.Password), []byte(password))
+	return err == nil
+}
+
+func (m *Member) GeneratePasswordResetToken() (string, error) {
+	token := uuid.New().String()
+	m.PasswordResetToken = token
+	expiresAt := time.Now().Add(24 * time.Hour) // Token válido por 24 horas
+	m.TokenExpiresAt = &expiresAt
+	return token, nil
+}
+
+func (m *Member) IsPasswordResetTokenValid(token string) bool {
+	if m.PasswordResetToken == "" || m.TokenExpiresAt == nil {
+		return false
+	}
+	return m.PasswordResetToken == token && time.Now().Before(*m.TokenExpiresAt)
 }

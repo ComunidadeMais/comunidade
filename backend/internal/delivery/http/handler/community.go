@@ -397,3 +397,37 @@ func (h *Handler) UploadCommunityBanner(c *gin.Context) {
 		"banner":  filepath,
 	})
 }
+
+// GetPublicCommunityData retorna os dados públicos de uma comunidade
+func (h *Handler) GetPublicCommunityData(c *gin.Context) {
+	communityID := c.Param("communityId")
+	if communityID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ID da comunidade é obrigatório"})
+		return
+	}
+
+	community, err := h.repos.Community.FindByID(context.Background(), communityID)
+	if err != nil {
+		h.logger.Error("erro ao buscar comunidade",
+			zap.Error(err),
+			zap.String("community_id", communityID),
+		)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao buscar dados da comunidade"})
+		return
+	}
+
+	if community == nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Comunidade não encontrada"})
+		return
+	}
+
+	// Log the community data before sending
+	h.logger.Info("retornando dados públicos da comunidade",
+		zap.String("community_id", communityID),
+		zap.Any("community", community),
+	)
+
+	c.JSON(http.StatusOK, gin.H{
+		"community": community,
+	})
+}

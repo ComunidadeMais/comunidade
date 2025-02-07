@@ -24,6 +24,7 @@ type Repositories struct {
 	RecurringDonation RecurringDonationRepository
 	AsaasConfig       AsaasConfigRepository
 	AsaasAccount      AsaasAccountRepository
+	Engagement        EngagementRepository
 	//Contribution      ContributionRepository
 }
 
@@ -47,6 +48,7 @@ func NewRepositories(db *gorm.DB, logger *zap.Logger) *Repositories {
 		RecurringDonation: NewRecurringDonationRepository(db, logger),
 		AsaasConfig:       NewAsaasConfigRepository(db, logger),
 		AsaasAccount:      NewAsaasAccountRepository(db, logger),
+		Engagement:        NewEngagementRepository(db, logger),
 		//Contribution:      NewContributionRepository(db, logger),
 	}
 }

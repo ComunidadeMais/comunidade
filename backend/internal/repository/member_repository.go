@@ -21,6 +21,7 @@ type MemberRepository interface {
 	FindByFamilyID(ctx context.Context, communityID, familyID string) ([]*domain.Member, error)
 	FindByGroupID(ctx context.Context, communityID, groupID string) ([]*domain.Member, error)
 	FindByCPF(ctx context.Context, communityID string, cpf string) (*domain.Member, error)
+	FindByEmailOrCPF(ctx context.Context, communityID, email, cpf string) (*domain.Member, error)
 }
 
 type memberRepository struct {
@@ -171,6 +172,20 @@ func (r *memberRepository) FindByCPF(ctx context.Context, communityID string, cp
 			return nil, nil
 		}
 		return nil, result.Error
+	}
+	return &member, nil
+}
+
+// FindByEmailOrCPF busca um membro pelo email ou CPF
+func (r *memberRepository) FindByEmailOrCPF(ctx context.Context, communityID, email, cpf string) (*domain.Member, error) {
+	var member domain.Member
+	if err := r.GetDB().WithContext(ctx).
+		Where("community_id = ? AND (email = ? OR cpf = ?)", communityID, email, cpf).
+		First(&member).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, nil
+		}
+		return nil, err
 	}
 	return &member, nil
 }
