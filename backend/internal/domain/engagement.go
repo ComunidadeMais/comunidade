@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/lib/pq"
 	"gorm.io/gorm"
 )
 
@@ -23,15 +24,16 @@ type MemberAchievement struct {
 
 // CommunityPost representa uma postagem no feed da comunidade
 type CommunityPost struct {
-	ID          string    `json:"id" gorm:"primaryKey;type:uuid"`
-	CommunityID string    `json:"community_id" gorm:"type:uuid;not null"`
-	AuthorID    string    `json:"author_id" gorm:"type:uuid;not null"`
-	Title       string    `json:"title" gorm:"type:varchar(255);not null"`
-	Content     string    `json:"content" gorm:"type:text;not null"`
-	Type        string    `json:"type" gorm:"type:varchar(50);not null;default:'post';check:type IN ('post', 'announcement', 'devotional')"`
-	Likes       int       `json:"likes" gorm:"not null;default:0"`
-	CreatedAt   time.Time `json:"created_at" gorm:"not null"`
-	UpdatedAt   time.Time `json:"updated_at" gorm:"not null"`
+	ID          string         `json:"id" gorm:"primaryKey;type:uuid"`
+	CommunityID string         `json:"community_id" gorm:"type:uuid;not null"`
+	AuthorID    string         `json:"author_id" gorm:"type:uuid;not null"`
+	Title       string         `json:"title" gorm:"type:varchar(255);not null"`
+	Content     string         `json:"content" gorm:"type:text;not null"`
+	Type        string         `json:"type" gorm:"type:varchar(50);not null;default:'post';check:type IN ('post', 'announcement', 'devotional')"`
+	Likes       int            `json:"likes" gorm:"not null;default:0"`
+	Images      pq.StringArray `json:"images" gorm:"type:text[]"`
+	CreatedAt   time.Time      `json:"created_at" gorm:"not null"`
+	UpdatedAt   time.Time      `json:"updated_at" gorm:"not null"`
 
 	Community *Community     `json:"community,omitempty" gorm:"foreignKey:CommunityID"`
 	Author    *Member        `json:"author,omitempty" gorm:"foreignKey:AuthorID"`

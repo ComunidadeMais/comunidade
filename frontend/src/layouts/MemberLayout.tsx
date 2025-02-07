@@ -24,6 +24,8 @@ import {
   Favorite as PrayerIcon,
   Person as ProfileIcon,
   Logout as LogoutIcon,
+  Feed as FeedIcon,
+  EmojiEvents as AchievementsIcon,
 } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -87,6 +89,12 @@ const MemberLayout: React.FC<MemberLayoutProps> = ({ children }) => {
       color: '#2196F3', // Azul
     },
     {
+      text: 'Feed',
+      icon: <FeedIcon />,
+      onClick: () => navigate(`/communities/${communityId}/member/feed`),
+      color: '#00BCD4', // Ciano
+    },
+    {
       text: 'Eventos',
       icon: <EventIcon />,
       onClick: () => navigate(`/communities/${communityId}/member/events`),
@@ -109,6 +117,12 @@ const MemberLayout: React.FC<MemberLayoutProps> = ({ children }) => {
       icon: <PrayerIcon />,
       onClick: () => navigate(`/communities/${communityId}/member/prayers`),
       color: '#E91E63', // Rosa
+    },
+    {
+      text: 'Conquistas',
+      icon: <AchievementsIcon />,
+      onClick: () => navigate(`/communities/${communityId}/member/achievements`),
+      color: '#FFC107', // Amarelo
     },
     {
       text: 'Perfil',

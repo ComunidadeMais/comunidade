@@ -18,9 +18,6 @@ func InitRoutes(r *gin.Engine, h RouteHandler, authMiddleware gin.HandlerFunc) {
 		MaxAge:           12 * time.Hour,
 	}))
 
-	// Configura o servidor de arquivos estáticos
-	r.Static("/uploads", "./uploads")
-
 	// API v1
 	v1 := r.Group("/api/v1")
 

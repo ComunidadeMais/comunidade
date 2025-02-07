@@ -35,8 +35,7 @@ const isPublicRoute = (path: string) => {
 };
 
 const isMemberRoute = (path: string) => {
-  // Verifica se a rota contém '/member/' ou '/members/' e não é uma rota pública
-  return (path.includes('/member/') || path.includes('/members/')) && !isPublicRoute(path);
+  return path.includes('/engagement/') || path.includes('/member/') || path.includes('/members/');
 };
 
 api.interceptors.request.use(

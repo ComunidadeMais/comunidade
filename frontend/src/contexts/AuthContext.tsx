@@ -13,6 +13,7 @@ interface AuthContextData {
   setCurrentCommunity: (community: Community | null) => void;
   member: Member | null;
   setMember: (member: Member | null) => void;
+  currentUser: Member | null;
   isAuthenticated: boolean;
   login: (token: string, communityId: string) => Promise<void>;
   logout: () => void;
@@ -46,7 +47,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const loadMemberData = async (communityId: string) => {
     try {
       const response = await api.get(`/communities/${communityId}/members/me`);
-      setMember(response.data.member);
+      const memberData = response.data.member;
+      
+      // Garantir que o member tenha todos os campos necessários
+      if (memberData && !memberData.id) {
+        console.error('Member data is missing required fields:', memberData);
+        throw new Error('Invalid member data');
+      }
+      
+      setMember(memberData);
 
       // Load community data if not present
       if (!currentCommunity) {
@@ -85,10 +94,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       // Load member data after setting the token
       const response = await api.get(`/communities/${communityId}/members/me`);
-      if (response.data.member) {
-        setMember(response.data.member);
+      const memberData = response.data.member;
+      
+      if (memberData && memberData.id) {
+        setMember(memberData);
       } else {
-        console.error('Member data not found in response');
+        console.error('Member data not found or invalid:', memberData);
         throw new Error('Failed to load member data');
       }
 
@@ -132,6 +143,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setCurrentCommunity,
     member,
     setMember,
+    currentUser: member,
     isAuthenticated,
     login,
     logout,

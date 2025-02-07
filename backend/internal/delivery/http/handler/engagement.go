@@ -1,10 +1,18 @@
 package handler
 
 import (
+	"fmt"
 	"net/http"
+	"os"
+	"path/filepath"
+	"time"
+
+	"mime/multipart"
 
 	"github.com/comunidade/backend/internal/domain"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
+	"go.uber.org/zap"
 )
 
 // GetMemberDashboard retorna o dashboard do membro
@@ -24,33 +32,127 @@ func (h *Handler) GetMemberDashboard(c *gin.Context) {
 // Handlers para Posts
 
 type CreatePostRequest struct {
-	Title   string `json:"title" binding:"required"`
-	Content string `json:"content" binding:"required"`
-	Type    string `json:"type" binding:"required,oneof=post announcement devotional"`
+	Title   string                  `form:"title" binding:"required"`
+	Content string                  `form:"content" binding:"required"`
+	Type    string                  `form:"type" binding:"required,oneof=post announcement devotional"`
+	Images  []*multipart.FileHeader `form:"images"`
 }
 
 func (h *Handler) CreatePost(c *gin.Context) {
 	communityID := c.Param("communityId")
-	userID := c.GetString("userId")
+	memberID := c.GetString("memberId")
+
+	// Debug form data
+	form, err := c.MultipartForm()
+	if err != nil {
+		h.logger.Error("Erro ao obter form data", zap.Error(err))
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to get form data"})
+		return
+	}
+
+	h.logger.Info("Form data recebido",
+		zap.Any("fields", form.Value),
+		zap.Any("file_headers", form.File))
+
+	// Criar diretório de uploads se não existir
+	uploadsDir := filepath.Join("uploads", "posts")
+	if err := os.MkdirAll(uploadsDir, 0755); err != nil {
+		h.logger.Error("Erro ao criar diretório", zap.Error(err))
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create uploads directory"})
+		return
+	}
 
 	var req CreatePostRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
+	if err := c.ShouldBind(&req); err != nil {
+		h.logger.Error("Erro ao fazer bind dos dados", zap.Error(err))
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
+	// Debug log
+	h.logger.Info("Processando upload de imagens",
+		zap.Int("quantidade", len(req.Images)),
+		zap.String("community_id", communityID),
+		zap.String("member_id", memberID))
+
+	// Processar imagens
+	var imageNames []string
+	if len(req.Images) > 0 {
+		for i, file := range req.Images {
+			// Verificar se o arquivo tem conteúdo
+			if file.Size == 0 {
+				h.logger.Error("Arquivo vazio recebido",
+					zap.Int("index", i),
+					zap.String("filename", file.Filename))
+				c.JSON(http.StatusBadRequest, gin.H{"error": "Empty file received"})
+				return
+			}
+
+			// Debug do arquivo
+			h.logger.Info("Dados do arquivo",
+				zap.Int("index", i),
+				zap.String("filename", file.Filename),
+				zap.Int64("size", file.Size),
+				zap.String("content_type", file.Header.Get("Content-Type")))
+
+			// Gerar nome único para o arquivo
+			ext := filepath.Ext(file.Filename)
+			fileName := fmt.Sprintf("%s-%s%s", uuid.New().String(), time.Now().Format("20060102150405"), ext)
+
+			// Definir caminho do arquivo
+			uploadPath := filepath.Join(uploadsDir, fileName)
+
+			// Debug log
+			h.logger.Info("Salvando arquivo",
+				zap.Int("index", i),
+				zap.String("original_name", file.Filename),
+				zap.String("save_path", uploadPath))
+
+			// Salvar arquivo
+			if err := c.SaveUploadedFile(file, uploadPath); err != nil {
+				h.logger.Error("Erro ao salvar arquivo",
+					zap.Error(err),
+					zap.String("path", uploadPath))
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save image"})
+				return
+			}
+
+			// Verificar se o arquivo foi salvo
+			if _, err := os.Stat(uploadPath); os.IsNotExist(err) {
+				h.logger.Error("Arquivo não foi salvo",
+					zap.String("path", uploadPath))
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "File was not saved"})
+				return
+			}
+
+			imageNames = append(imageNames, fileName)
+		}
+	}
+
 	post := &domain.CommunityPost{
 		CommunityID: communityID,
-		AuthorID:    userID,
+		AuthorID:    memberID,
 		Title:       req.Title,
 		Content:     req.Content,
 		Type:        req.Type,
+		Images:      imageNames,
 	}
 
+	// Debug log
+	h.logger.Info("Criando post",
+		zap.Any("post", post))
+
 	if err := h.services.Engagement.CreatePost(c.Request.Context(), communityID, post); err != nil {
+		h.logger.Error("Erro ao criar post",
+			zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+
+	// Debug final
+	h.logger.Info("Post criado com sucesso",
+		zap.String("id", post.ID),
+		zap.Any("images", post.Images))
 
 	c.JSON(http.StatusCreated, post)
 }
@@ -145,7 +247,7 @@ type CreateCommentRequest struct {
 
 func (h *Handler) CreateComment(c *gin.Context) {
 	postID := c.Param("postId")
-	userID := c.GetString("userId")
+	memberID := c.GetString("memberId")
 
 	var req CreateCommentRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -155,7 +257,7 @@ func (h *Handler) CreateComment(c *gin.Context) {
 
 	comment := &domain.PostComment{
 		PostID:   postID,
-		AuthorID: userID,
+		AuthorID: memberID,
 		Content:  req.Content,
 	}
 
@@ -183,12 +285,12 @@ func (h *Handler) DeleteComment(c *gin.Context) {
 
 func (h *Handler) CreateReaction(c *gin.Context) {
 	postID := c.Param("postId")
-	userID := c.GetString("userId")
+	memberID := c.GetString("memberId")
 	reactionType := c.Param("type")
 
 	reaction := &domain.PostReaction{
 		PostID:   postID,
-		MemberID: userID,
+		MemberID: memberID,
 		Type:     reactionType,
 	}
 
@@ -202,9 +304,9 @@ func (h *Handler) CreateReaction(c *gin.Context) {
 
 func (h *Handler) DeleteReaction(c *gin.Context) {
 	postID := c.Param("postId")
-	userID := c.GetString("userId")
+	memberID := c.GetString("memberId")
 
-	if err := h.services.Engagement.DeleteReaction(c.Request.Context(), postID, userID); err != nil {
+	if err := h.services.Engagement.DeleteReaction(c.Request.Context(), postID, memberID); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -222,7 +324,7 @@ type CreatePrayerRequest struct {
 
 func (h *Handler) CreatePrayerRequest(c *gin.Context) {
 	communityID := c.Param("communityId")
-	userID := c.GetString("userId")
+	memberID := c.GetString("memberId")
 
 	var req CreatePrayerRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -232,7 +334,7 @@ func (h *Handler) CreatePrayerRequest(c *gin.Context) {
 
 	prayer := &domain.PrayerRequest{
 		CommunityID: communityID,
-		MemberID:    userID,
+		MemberID:    memberID,
 		Title:       req.Title,
 		Content:     req.Content,
 		IsPrivate:   req.IsPrivate,

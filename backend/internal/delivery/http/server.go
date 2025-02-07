@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"os"
 
 	"github.com/comunidade/backend/internal/delivery/http/handler"
 	"github.com/comunidade/backend/internal/delivery/http/middleware"
@@ -26,8 +27,18 @@ func NewServer(repos *repository.Repositories, logger *zap.Logger) *Server {
 	// Adiciona middleware de logging
 	router.Use(middleware.Logger(logger))
 
+	// Cria o diretório de uploads se não existir
+	uploadsDir := "./uploads/posts"
+	if err := os.MkdirAll(uploadsDir, 0755); err != nil {
+		logger.Error("Erro ao criar diretório de uploads", zap.Error(err))
+	}
+
 	// Configura as rotas
 	handler.NewHandler(router, repos, logger)
+
+	// Configura o servidor para servir arquivos estáticos dentro do grupo /api/v1
+	apiGroup := router.Group("/api/v1")
+	apiGroup.Static("/uploads", "./uploads")
 
 	return &Server{
 		router: router,
