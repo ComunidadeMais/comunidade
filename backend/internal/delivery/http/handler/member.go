@@ -718,3 +718,38 @@ func (h *Handler) SearchMember(c *gin.Context) {
 		"member": member,
 	})
 }
+
+// GetCurrentMember returns the current authenticated member's data
+func (h *Handler) GetCurrentMember(c *gin.Context) {
+	communityID := c.Param("communityId")
+	if communityID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "community_id is required"})
+		return
+	}
+
+	// Get member ID from context (set by auth middleware)
+	memberID, exists := c.Get("memberId")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+
+	// Get member data
+	member, err := h.repos.Member.FindByID(c.Request.Context(), communityID, memberID.(string))
+	if err != nil {
+		h.logger.Error("error getting member data",
+			zap.Error(err),
+			zap.String("community_id", communityID),
+			zap.String("member_id", memberID.(string)),
+		)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get member data"})
+		return
+	}
+
+	if member == nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "member not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"member": member})
+}

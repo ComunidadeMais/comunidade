@@ -1,9 +1,13 @@
 package router
 
-import "github.com/gin-gonic/gin"
+import (
+	"github.com/comunidade/backend/internal/delivery/http/middleware"
+	"github.com/gin-gonic/gin"
+)
 
 func InitEngagementRoutes(router *gin.RouterGroup, h RouteHandler) {
 	engagement := router.Group("/communities/:communityId/engagement")
+	engagement.Use(middleware.MemberAuth(h.GetRepos(), h.GetLogger()))
 	{
 		// Dashboard do membro
 		engagement.GET("/members/:memberId/dashboard", h.GetMemberDashboard)

@@ -1,8 +1,7 @@
 import React, { useEffect } from 'react';
 import { Routes, Route, Navigate, Outlet, useParams } from 'react-router-dom';
-import { AuthProvider, useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/AuthContext';
 import MemberDashboard from '../pages/member/MemberDashboard';
-import MemberLogin from '../pages/member/MemberLogin';
 import MemberEvents from '../pages/member/MemberEvents';
 import MemberGroups from '../pages/member/MemberGroups';
 import MemberDonations from '../pages/member/MemberDonations';
@@ -11,32 +10,7 @@ import MemberProfile from '../pages/member/MemberProfile';
 import MemberLayout from '../layouts/MemberLayout';
 import api from '../services/api';
 
-export function AppRoutes() {
-  return (
-    <AuthProvider>
-      <Routes>
-        {/* Rota pública para login de membros */}
-        <Route path="/communities/:communityId/member/login" element={<MemberLogin />} />
-
-        {/* Rotas protegidas do Portal do Membro */}
-        <Route path="/communities/:communityId/member/*" element={<PrivateRoute />}>
-          <Route path="dashboard" element={<MemberDashboard />} />
-          <Route path="events" element={<MemberEvents />} />
-          <Route path="groups" element={<MemberGroups />} />
-          <Route path="donations" element={<MemberDonations />} />
-          <Route path="prayers" element={<MemberPrayers />} />
-          <Route path="profile" element={<MemberProfile />} />
-          <Route index element={<Navigate to="dashboard" replace />} />
-        </Route>
-
-        {/* Redireciona para o login se tentar acessar uma rota inválida */}
-        <Route path="*" element={<Navigate to="/login" replace />} />
-      </Routes>
-    </AuthProvider>
-  );
-}
-
-// Componente para proteger rotas privadas
+// Componente para proteger rotas privadas do membro
 const PrivateRoute = () => {
   const { currentCommunity, setCurrentCommunity } = useAuth();
   const { communityId } = useParams();
@@ -72,4 +46,21 @@ const PrivateRoute = () => {
       <Outlet />
     </MemberLayout>
   );
-}; 
+};
+
+export function AppRoutes() {
+  return (
+    <Routes>
+      {/* Rotas protegidas do Portal do Membro */}
+      <Route element={<PrivateRoute />}>
+        <Route path="dashboard" element={<MemberDashboard />} />
+        <Route path="events" element={<MemberEvents />} />
+        <Route path="groups" element={<MemberGroups />} />
+        <Route path="donations" element={<MemberDonations />} />
+        <Route path="prayers" element={<MemberPrayers />} />
+        <Route path="profile" element={<MemberProfile />} />
+        <Route index element={<Navigate to="dashboard" replace />} />
+      </Route>
+    </Routes>
+  );
+} 

@@ -33,7 +33,7 @@ func InitRoutes(r *gin.Engine, h RouteHandler, authMiddleware gin.HandlerFunc) {
 		InitPublicCommunityRoutes(public, h)
 	}
 
-	// Rotas protegidas (com autenticação)
+	// Rotas protegidas (com autenticação de usuário)
 	protected := v1.Group("")
 	protected.Use(authMiddleware)
 	{
@@ -47,8 +47,10 @@ func InitRoutes(r *gin.Engine, h RouteHandler, authMiddleware gin.HandlerFunc) {
 		InitCommunicationRoutes(protected, h)
 		InitFinancialRoutes(protected, h)
 		InitDonationRoutes(protected, h)
-		InitEngagementRoutes(protected, h)
 	}
+
+	// Rotas protegidas com autenticação de membro
+	InitEngagementRoutes(v1, h)
 
 	// Webhooks
 	InitWebhookRoutes(v1, h)

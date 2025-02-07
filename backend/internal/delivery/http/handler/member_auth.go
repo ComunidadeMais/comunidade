@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/comunidade/backend/internal/config"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"go.uber.org/zap"
@@ -107,6 +108,14 @@ func (h *Handler) MemberLogin(c *gin.Context) {
 		return
 	}
 
+	// Carrega a configuração
+	cfg, err := config.Load()
+	if err != nil {
+		h.logger.Error("erro ao carregar configuração", zap.Error(err))
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro interno do servidor"})
+		return
+	}
+
 	// Gera o token JWT
 	token := jwt.New(jwt.SigningMethodHS256)
 	claims := token.Claims.(jwt.MapClaims)
@@ -115,8 +124,8 @@ func (h *Handler) MemberLogin(c *gin.Context) {
 	claims["role"] = member.Role
 	claims["exp"] = time.Now().Add(time.Hour * 24).Unix()
 
-	// Assina o token
-	tokenString, err := token.SignedString([]byte("seu_segredo_jwt"))
+	// Assina o token usando a chave da configuração
+	tokenString, err := token.SignedString([]byte(cfg.JWT.Secret))
 	if err != nil {
 		h.logger.Error("erro ao gerar token", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao gerar token"})

@@ -51,6 +51,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import MemberDashboard from './pages/member/MemberDashboard';
 import MemberLogin from './pages/member/MemberLogin';
 import { AuthProvider } from './contexts/AuthContext';
+import { AppRoutes } from './routes';
 
 // Componente para proteger rotas
 const PrivateRoute: FC<{ element: React.ReactElement }> = ({ element }) => {
@@ -61,6 +62,13 @@ const PrivateRoute: FC<{ element: React.ReactElement }> = ({ element }) => {
   const isMemberRoute = location.pathname.includes('/member/');
   
   if (!isAuthenticated) {
+    // Se for rota de membro, redireciona para o login do membro
+    if (isMemberRoute) {
+      const pathParts = location.pathname.split('/');
+      const communityId = pathParts[2]; // /communities/:communityId/member/...
+      return <Navigate to={`/communities/${communityId}/member/login`} />;
+    }
+    // Se não for rota de membro, redireciona para o login administrativo
     return <Navigate to="/login" />;
   }
 
@@ -92,11 +100,11 @@ const App: FC = () => {
                 <Route path="/events/:eventId/view" element={<EventView />} />
                 <Route path="/events/:eventId/checkin" element={<CheckIn />} />
 
-                {/* Portal do Membro - Rotas Públicas */}
+                {/* Portal do Membro */}
                 <Route path="/communities/:communityId/member/login" element={<MemberLogin />} />
-                <Route path="/communities/:communityId/member/dashboard" element={<MemberDashboard />} />
+                <Route path="/communities/:communityId/member/*" element={<AppRoutes />} />
 
-                {/* Rotas protegidas */}
+                {/* Rotas Administrativas protegidas */}
                 <Route path="/*" element={
                   <UsersProvider>
                     <Routes>

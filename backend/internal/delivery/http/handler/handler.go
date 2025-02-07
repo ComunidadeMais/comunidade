@@ -62,6 +62,14 @@ func (h *Handler) checkUserPermission(ctx context.Context, userID string, commun
 	return nil
 }
 
+func (h *Handler) GetLogger() *zap.Logger {
+	return h.logger
+}
+
+func (h *Handler) GetRepos() *repository.Repositories {
+	return h.repos
+}
+
 type RouteHandler interface {
 	// Auth
 	SignUp(c *gin.Context)

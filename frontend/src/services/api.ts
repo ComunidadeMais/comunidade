@@ -34,20 +34,19 @@ const isPublicRoute = (path: string) => {
   return false;
 };
 
-const isMemberRoute = (path: string, isPublic: boolean) => {
-  return path.includes('/member/') && !isPublic;
+const isMemberRoute = (path: string) => {
+  // Verifica se a rota contém '/member/' ou '/members/' e não é uma rota pública
+  return (path.includes('/member/') || path.includes('/members/')) && !isPublicRoute(path);
 };
 
 api.interceptors.request.use(
   config => {
     const token = localStorage.getItem('token');
     const memberToken = localStorage.getItem('memberToken');
-    const currentPath = config.url?.replace(config.baseURL || '', '');
+    const currentPath = config.url?.replace(config.baseURL || '', '') || '';
     
-    if (!currentPath) return config;
-
     const isPublic = isPublicRoute(currentPath);
-    const isMember = isMemberRoute(currentPath, isPublic);
+    const isMember = isMemberRoute(currentPath);
 
     console.log('Configuração da requisição:', {
       path: currentPath,
@@ -78,6 +77,14 @@ api.interceptors.response.use(
   response => response,
   error => {
     if (error.response) {
+      // Se receber 401 em uma rota de membro, redireciona para o login
+      if (error.response.status === 401 && isMemberRoute(error.config.url || '')) {
+        const communityId = localStorage.getItem('communityId');
+        if (communityId) {
+          window.location.href = `/communities/${communityId}/member/login`;
+        }
+      }
+
       console.error('Erro na resposta da API:', {
         status: error.response.status,
         data: error.response.data,

@@ -1,9 +1,16 @@
 package router
 
-import "github.com/gin-gonic/gin"
+import (
+	"github.com/comunidade/backend/internal/repository"
+	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
+)
 
 // RouteHandler define os métodos necessários para as rotas
 type RouteHandler interface {
+	GetLogger() *zap.Logger
+	GetRepos() *repository.Repositories
+
 	// Auth
 	Register(c *gin.Context)
 	Login(c *gin.Context)
@@ -37,6 +44,7 @@ type RouteHandler interface {
 
 	// Member
 	AddMember(c *gin.Context)
+	GetCurrentMember(c *gin.Context)
 	ListMembers(c *gin.Context)
 	SearchMember(c *gin.Context)
 	GetMember(c *gin.Context)
@@ -165,4 +173,18 @@ type RouteHandler interface {
 	UpdatePrayerRequest(c *gin.Context)
 	DeletePrayerRequest(c *gin.Context)
 	ListPrayerRequests(c *gin.Context)
+}
+
+// BaseHandler implements common methods for RouteHandler
+type BaseHandler struct {
+	logger *zap.Logger
+	repos  *repository.Repositories
+}
+
+func (h *BaseHandler) GetLogger() *zap.Logger {
+	return h.logger
+}
+
+func (h *BaseHandler) GetRepos() *repository.Repositories {
+	return h.repos
 }
