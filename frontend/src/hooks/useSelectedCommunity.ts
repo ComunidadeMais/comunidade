@@ -1,13 +1,6 @@
 import { useContext } from 'react';
 import { CommunityContext } from '../contexts/CommunityContext';
-
-export interface Community {
-  id: string;
-  name: string;
-  description: string;
-  created_at: string;
-  updated_at: string;
-}
+import { Community } from '../types/community';
 
 export interface CommunityContextType {
   activeCommunity: Community | null;

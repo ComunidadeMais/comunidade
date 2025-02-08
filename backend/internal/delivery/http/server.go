@@ -36,9 +36,8 @@ func NewServer(repos *repository.Repositories, logger *zap.Logger) *Server {
 	// Configura as rotas
 	handler.NewHandler(router, repos, logger)
 
-	// Configura o servidor para servir arquivos estáticos dentro do grupo /api/v1
-	apiGroup := router.Group("/api/v1")
-	apiGroup.Static("/uploads", "./uploads")
+	// Configura o servidor para servir arquivos estáticos na raiz
+	router.Static("/uploads", "./uploads")
 
 	return &Server{
 		router: router,

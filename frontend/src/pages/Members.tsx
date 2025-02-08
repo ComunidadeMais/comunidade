@@ -39,6 +39,7 @@ import { useNavigate } from 'react-router-dom';
 import { MemberService } from '../services/member';
 import { Member } from '../types/member';
 import { useCommunity } from '../contexts/CommunityContext';
+import API_CONFIG from '../config/api';
 
 const Members: React.FC = () => {
   const navigate = useNavigate();
@@ -250,7 +251,7 @@ const Members: React.FC = () => {
                           height: 64,
                           bgcolor: 'primary.main'
                         }}
-                        src={member.photo ? `http://localhost:8080/uploads/${member.photo}` : undefined}
+                        src={member.photo ? `${API_CONFIG.uploadsURL}/${member.photo}` : undefined}
                       >
                         {!member.photo && member.name.charAt(0)}
                       </Avatar>

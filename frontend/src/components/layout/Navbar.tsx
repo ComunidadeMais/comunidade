@@ -30,6 +30,7 @@ import { User } from '../../types/user';
 import { Community } from '../../types/community';
 import { useCommunity } from '../../contexts/CommunityContext';
 import { formatCommunityType, formatCommunityStatus, getCommunityTypeColor } from '../../utils/formatters';
+import API_CONFIG, { formatImageUrl } from '../../config/api';
 
 const logoUrl = new URL('../../assets/Comunidade+.PNG', import.meta.url).href;
 
@@ -139,7 +140,7 @@ const Navbar: FC<NavbarProps> = ({ onMenuClick }) => {
             }}
           >
             <Avatar
-              src={activeCommunity?.logo ? `http://localhost:8080/uploads/${activeCommunity.logo}` : undefined}
+              src={activeCommunity?.logo ? formatImageUrl(activeCommunity.logo) : undefined}
               sx={{ width: 32, height: 32 }}
             >
               {activeCommunity?.name.charAt(0)}
@@ -206,8 +207,8 @@ const Navbar: FC<NavbarProps> = ({ onMenuClick }) => {
                   {user?.email}
                 </Typography>
               </Box>
-              <Avatar 
-                src={user?.avatar}
+              <Avatar
+                src={user?.avatar ? formatImageUrl(`avatars/${user.avatar}`) : undefined}
                 sx={{ 
                   width: 32, 
                   height: 32,
@@ -254,7 +255,7 @@ const Navbar: FC<NavbarProps> = ({ onMenuClick }) => {
             >
               <ListItemIcon>
                 <Avatar
-                  src={community.logo ? `http://localhost:8080/uploads/${community.logo}` : undefined}
+                  src={community.logo ? formatImageUrl(community.logo) : undefined}
                   sx={{ width: 32, height: 32 }}
                 >
                   {community.name.charAt(0)}

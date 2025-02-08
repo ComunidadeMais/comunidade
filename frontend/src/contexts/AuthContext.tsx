@@ -6,6 +6,7 @@ export interface Community {
   id: string;
   name: string;
   logo?: string;
+  type?: string;
 }
 
 interface AuthContextData {

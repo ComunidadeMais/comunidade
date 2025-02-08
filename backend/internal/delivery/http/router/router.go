@@ -3,6 +3,7 @@ package router
 import (
 	"time"
 
+	"github.com/comunidade/backend/internal/delivery/http/middleware"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
@@ -30,25 +31,30 @@ func InitRoutes(r *gin.Engine, h RouteHandler, authMiddleware gin.HandlerFunc) {
 		InitPublicCommunityRoutes(public, h)
 	}
 
-	// Rotas protegidas (com autenticação de usuário)
-	protected := v1.Group("")
-	protected.Use(authMiddleware)
+	// Rotas protegidas (com autenticação administrativa)
+	adminProtected := v1.Group("")
+	adminProtected.Use(middleware.AdminAuth(h.GetRepos(), h.GetLogger()))
 	{
-		InitUserRoutes(protected, h)
-		InitCommunityRoutes(protected, h)
-		InitMemberRoutes(protected, h)
-		InitFamilyRoutes(protected, h)
-		InitGroupRoutes(protected, h)
-		InitEventRoutes(protected, h)
-		InitCheckInRoutes(protected, h)
-		InitCommunicationRoutes(protected, h)
-		InitFinancialRoutes(protected, h)
-		InitDonationRoutes(protected, h)
+		InitUserRoutes(adminProtected, h)
+		InitCommunityRoutes(adminProtected, h)
+		InitMemberRoutes(adminProtected, h)
+		InitFamilyRoutes(adminProtected, h)
+		InitGroupRoutes(adminProtected, h)
+		InitEventRoutes(adminProtected, h)
+		InitCheckInRoutes(adminProtected, h)
+		InitCommunicationRoutes(adminProtected, h)
+		InitFinancialRoutes(adminProtected, h)
+		InitDonationRoutes(adminProtected, h)
 	}
 
-	// Rotas protegidas com autenticação de membro
-	InitEngagementRoutes(v1, h)
+	// Rotas protegidas com autenticação de membro (portal do membro)
+	memberProtected := v1.Group("")
+	memberProtected.Use(middleware.MemberAuth(h.GetRepos(), h.GetLogger()))
+	{
+		InitEngagementRoutes(memberProtected, h)
+		// Outras rotas específicas do portal do membro
+	}
 
-	// Webhooks
+	// Webhooks (sem autenticação)
 	InitWebhookRoutes(v1, h)
 }

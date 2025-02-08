@@ -50,7 +50,7 @@ func Auth(repos *repository.Repositories, logger *zap.Logger) gin.HandlerFunc {
 			return
 		}
 
-		// Obtém o ID do usuário do token
+		// Obtém as claims do token
 		claims, ok := token.Claims.(jwt.MapClaims)
 		if !ok {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Token inválido"})
@@ -58,30 +58,49 @@ func Auth(repos *repository.Repositories, logger *zap.Logger) gin.HandlerFunc {
 			return
 		}
 
-		userID, ok := claims["sub"].(string)
+		// Obtém o ID do usuário LOGADO do token (não confundir com ID do membro)
+		loggedUserID, ok := claims["sub"].(string)
 		if !ok {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Token inválido"})
 			c.Abort()
 			return
 		}
 
-		// Busca o usuário no banco de dados
-		user, err := repos.User.FindByID(c.Request.Context(), userID)
+		// Busca o usuário LOGADO no banco de dados
+		loggedUser, err := repos.User.FindByID(c.Request.Context(), loggedUserID)
 		if err != nil {
 			logger.Error("erro ao buscar usuário", zap.Error(err))
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro interno do servidor"})
 			c.Abort()
 			return
 		}
-		if user == nil {
+		if loggedUser == nil {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Usuário não encontrado"})
 			c.Abort()
 			return
 		}
 
-		// Adiciona o usuário ao contexto
-		c.Set("user", user)
-		c.Set("userId", userID)
+		// Adiciona o usuário LOGADO ao contexto
+		c.Set("user", loggedUser)
+		c.Set("userId", loggedUserID)
+
+		// Adiciona o papel (role) do token ao contexto
+		if role, ok := claims["role"].(string); ok {
+			c.Set("role", role)
+		}
+
+		// Prioriza o ID da comunidade da URL, se não existir usa o do token
+		communityID := c.Param("communityId")
+		if communityID == "" {
+			if tokenCommunityID, ok := claims["community_id"].(string); ok {
+				communityID = tokenCommunityID
+			}
+		}
+
+		if communityID != "" {
+			c.Set("communityId", communityID)
+		}
+
 		c.Next()
 	}
 }

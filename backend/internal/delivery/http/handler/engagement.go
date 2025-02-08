@@ -98,10 +98,10 @@ func (h *Handler) CreatePost(c *gin.Context) {
 
 			// Gerar nome único para o arquivo
 			ext := filepath.Ext(file.Filename)
-			fileName := fmt.Sprintf("%s-%s%s", uuid.New().String(), time.Now().Format("20060102150405"), ext)
+			fileName := fmt.Sprintf("posts/%s-%s%s", uuid.New().String(), time.Now().Format("20060102150405"), ext)
 
 			// Definir caminho do arquivo
-			uploadPath := filepath.Join(uploadsDir, fileName)
+			uploadPath := filepath.Join("uploads", fileName)
 
 			// Debug log
 			h.logger.Info("Salvando arquivo",
@@ -253,7 +253,7 @@ func (h *Handler) UpdatePost(c *gin.Context) {
 		}
 		if !found {
 			// Remover arquivo físico
-			imagePath := filepath.Join("uploads", "posts", oldImage)
+			imagePath := filepath.Join("uploads", oldImage)
 			if err := os.Remove(imagePath); err != nil && !os.IsNotExist(err) {
 				h.logger.Error("Erro ao remover imagem antiga",
 					zap.Error(err),
@@ -278,8 +278,8 @@ func (h *Handler) UpdatePost(c *gin.Context) {
 			}
 
 			ext := filepath.Ext(file.Filename)
-			fileName := fmt.Sprintf("%s-%s%s", uuid.New().String(), time.Now().Format("20060102150405"), ext)
-			uploadPath := filepath.Join(uploadsDir, fileName)
+			fileName := fmt.Sprintf("posts/%s-%s%s", uuid.New().String(), time.Now().Format("20060102150405"), ext)
+			uploadPath := filepath.Join("uploads", fileName)
 
 			if err := c.SaveUploadedFile(file, uploadPath); err != nil {
 				h.logger.Error("Erro ao salvar nova imagem",

@@ -11,8 +11,8 @@ import (
 	"go.uber.org/zap"
 )
 
-// MemberAuth é o middleware para autenticação de membros no portal
-func MemberAuth(repos *repository.Repositories, logger *zap.Logger) gin.HandlerFunc {
+// AdminAuth é o middleware para autenticação administrativa
+func AdminAuth(repos *repository.Repositories, logger *zap.Logger) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// Obtém o token do header Authorization
 		authHeader := c.GetHeader("Authorization")
@@ -59,52 +59,46 @@ func MemberAuth(repos *repository.Repositories, logger *zap.Logger) gin.HandlerF
 			return
 		}
 
-		// Verifica se é um token de membro
+		// Obtém o ID do usuário administrativo
+		adminUserID, ok := claims["sub"].(string)
+		if !ok {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Token inválido"})
+			c.Abort()
+			return
+		}
+
+		// Verifica se é um token administrativo
 		// role, ok := claims["role"].(string)
-		// if !ok || role != "member" {
-		// 	c.JSON(http.StatusForbidden, gin.H{"error": "Acesso permitido apenas para membros"})
+		// if !ok || role != "admin" {
+		// 	c.JSON(http.StatusForbidden, gin.H{"error": "Acesso permitido apenas para administradores"})
 		// 	c.Abort()
 		// 	return
 		// }
 
-		// Obtém o ID do membro e da comunidade do token
-		memberID, ok := claims["sub"].(string)
-		if !ok {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Token inválido - ID do membro não encontrado"})
-			c.Abort()
-			return
-		}
-
-		communityID, ok := claims["community_id"].(string)
-		if !ok {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Token inválido - ID da comunidade não encontrado"})
-			c.Abort()
-			return
-		}
-
-		// Busca o membro no banco de dados
-		member, err := repos.Member.FindByID(c.Request.Context(), communityID, memberID)
+		// Busca o usuário administrativo
+		adminUser, err := repos.User.FindByID(c.Request.Context(), adminUserID)
 		if err != nil {
-			logger.Error("erro ao buscar membro",
-				zap.Error(err),
-				zap.String("member_id", memberID),
-				zap.String("community_id", communityID),
-			)
+			logger.Error("erro ao buscar usuário administrativo", zap.Error(err))
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro interno do servidor"})
 			c.Abort()
 			return
 		}
-		if member == nil {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Membro não encontrado"})
+		if adminUser == nil {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Usuário administrativo não encontrado"})
 			c.Abort()
 			return
 		}
 
 		// Adiciona informações ao contexto
-		c.Set("member", member)
-		c.Set("memberId", memberID)
-		c.Set("communityId", communityID)
-		//.Set("role", role)
+		c.Set("user", adminUser)
+		c.Set("userId", adminUserID)
+		//c.Set("role", role)
+
+		// Obtém o ID da comunidade da URL
+		communityID := c.Param("communityId")
+		if communityID != "" {
+			c.Set("communityId", communityID)
+		}
 
 		c.Next()
 	}

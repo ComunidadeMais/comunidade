@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -141,9 +142,10 @@ func (h *Handler) Login(c *gin.Context) {
 
 	// Gera o token JWT
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"sub": user.ID,
-		"exp": time.Now().Add(24 * time.Hour).Unix(),
-		"iat": time.Now().Unix(),
+		"sub":  user.ID,
+		"exp":  time.Now().Add(24 * time.Hour).Unix(),
+		"iat":  time.Now().Unix(),
+		"role": user.Role,
 	})
 
 	// Assina o token
@@ -265,4 +267,28 @@ func (h *Handler) ResetPassword(c *gin.Context) {
 
 func (h *Handler) ChangePassword(c *gin.Context) {
 	c.JSON(http.StatusNotImplemented, gin.H{"message": "Método ainda não implementado"})
+}
+
+func (h *Handler) generateToken(user *domain.User) (string, error) {
+	// Carrega a configuração
+	cfg, err := config.Load()
+	if err != nil {
+		return "", fmt.Errorf("erro ao carregar configuração: %v", err)
+	}
+
+	// Cria o token JWT
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"sub":  user.ID,
+		"exp":  time.Now().Add(24 * time.Hour).Unix(),
+		"iat":  time.Now().Unix(),
+		"role": user.Role,
+	})
+
+	// Assina o token com a chave secreta do config
+	tokenString, err := token.SignedString([]byte(cfg.JWT.Secret))
+	if err != nil {
+		return "", fmt.Errorf("erro ao assinar token: %v", err)
+	}
+
+	return tokenString, nil
 }
