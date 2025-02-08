@@ -22,6 +22,8 @@ import {
   Badge,
   useTheme,
   alpha,
+  FormControlLabel,
+  Switch,
 } from '@mui/material';
 import {
   Favorite as LikeIcon,
@@ -33,6 +35,7 @@ import {
   Bookmark as BookmarkIcon,
   BookmarkBorder as BookmarkBorderIcon,
   EmojiEmotions as EmojiIcon,
+  Sync as SyncIcon,
 } from '@mui/icons-material';
 import { motion, AnimatePresence } from 'framer-motion';
 import { format } from 'date-fns';
@@ -45,6 +48,7 @@ import { formatImageUrl } from '../../config/api';
 import ImageViewerDialog from '../../components/member/engagement/ImageViewerDialog';
 import EditPostDialog from '../../components/member/engagement/EditPostDialog';
 import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
+import { usePolling } from '../../hooks/usePolling';
 
 const MemberFeed: React.FC = () => {
   const [posts, setPosts] = useState<Post[]>([]);
@@ -64,30 +68,40 @@ const MemberFeed: React.FC = () => {
   const [showEmojiPicker, setShowEmojiPicker] = useState<{ [key: string]: boolean }>({});
   const [commentText, setCommentText] = useState<{ [key: string]: string }>({});
 
-  useEffect(() => {
-    if (currentCommunity?.id) {
-      loadPosts();
-    }
-  }, [currentCommunity]);
-
   const loadPosts = async () => {
     try {
-      setLoading(true);
-      setError(null);
-      
       if (!currentCommunity?.id) {
         throw new Error('ID da comunidade não encontrado');
       }
 
       const response = await engagementService.listPosts(currentCommunity.id);
       setPosts(response.posts || []);
+      setError(null); // Limpa qualquer erro anterior em caso de sucesso
     } catch (error) {
       console.error('Erro ao carregar posts:', error);
-      setError('Não foi possível carregar os posts. Tente novamente mais tarde.');
+      setError('Não foi possível carregar as publicações. Tente novamente mais tarde.');
     } finally {
       setLoading(false);
     }
   };
+
+  // Carregamento inicial dos posts
+  useEffect(() => {
+    loadPosts();
+  }, [currentCommunity?.id]);
+
+  // Configuração do polling automático
+  const { startPolling, stopPolling } = usePolling(loadPosts, {
+    interval: 30000, // 30 segundos
+    enabled: true,   // Sempre ativado
+    backoffFactor: 2,
+    maxBackoff: 300000 // 5 minutos
+  });
+
+  useEffect(() => {
+    startPolling(); // Inicia o polling automaticamente
+    return () => stopPolling(); // Limpa ao desmontar o componente
+  }, [startPolling, stopPolling]);
 
   const handleCreatePost = async (data: Partial<Post> & { imageFiles?: File[] }) => {
     try {
@@ -256,37 +270,18 @@ const MemberFeed: React.FC = () => {
           p: 0
         }}
       >
-        {/* Header do Feed */}
-        <Box
-          sx={{
-            position: 'sticky',
-            top: 64,
-            zIndex: 1,
-            bgcolor: 'background.default',
-            py: 2,
-            borderBottom: 1,
-            borderColor: 'divider',
-            backdropFilter: 'blur(8px)',
-          }}
-        >
-          <Box display="flex" justifyContent="space-between" alignItems="center">
-            <Typography variant="h4" component="h1" fontWeight="bold">
-              Feed da Comunidade
-            </Typography>
-            <Button
-              variant="contained"
-              color="primary"
-              startIcon={<AddIcon />}
-              onClick={() => setOpenCreateDialog(true)}
-              sx={{
-                borderRadius: 3,
-                px: 3,
-                boxShadow: theme.shadows[4],
-              }}
-            >
-              Nova Publicação
-            </Button>
-          </Box>
+        <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
+          <Typography variant="h4" component="h1" gutterBottom>
+            Feed
+          </Typography>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={() => setOpenCreateDialog(true)}
+            startIcon={<AddIcon />}
+          >
+            Nova Publicação
+          </Button>
         </Box>
 
         {error && (
