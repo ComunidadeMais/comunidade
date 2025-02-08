@@ -44,6 +44,7 @@ import CreatePostDialog from '../../components/member/engagement/CreatePostDialo
 import { formatImageUrl } from '../../config/api';
 import ImageViewerDialog from '../../components/member/engagement/ImageViewerDialog';
 import EditPostDialog from '../../components/member/engagement/EditPostDialog';
+import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
 
 const MemberFeed: React.FC = () => {
   const [posts, setPosts] = useState<Post[]>([]);
@@ -60,6 +61,8 @@ const MemberFeed: React.FC = () => {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [postToEdit, setPostToEdit] = useState<Post | null>(null);
+  const [showEmojiPicker, setShowEmojiPicker] = useState<{ [key: string]: boolean }>({});
+  const [commentText, setCommentText] = useState<{ [key: string]: string }>({});
 
   useEffect(() => {
     if (currentCommunity?.id) {
@@ -117,22 +120,37 @@ const MemberFeed: React.FC = () => {
     }
   };
 
+  const handleEmojiClick = (postId: string) => (emojiData: EmojiClickData) => {
+    setCommentText(prev => ({
+      ...prev,
+      [postId]: (prev[postId] || '') + emojiData.emoji
+    }));
+  };
+
+  const handleCommentChange = (postId: string, value: string) => {
+    setCommentText(prev => ({
+      ...prev,
+      [postId]: value
+    }));
+  };
+
   const handleCreateComment = async (postId: string) => {
     try {
-      if (!currentCommunity?.id || !currentUser?.id || !comment.trim()) {
-        return;
-      }
-
-      await engagementService.createComment(currentCommunity.id, postId, {
-        content: comment,
-        authorId: currentUser.id,
-        postId: postId,
+      await engagementService.createComment(currentCommunity!.id, postId, {
+        content: commentText[postId]
       });
-      setComment('');
-      loadPosts();
+      
+      // Limpar o comentário após enviar
+      setCommentText(prev => ({
+        ...prev,
+        [postId]: ''
+      }));
+      
+      // Recarregar os posts para mostrar o novo comentário
+      await loadPosts();
     } catch (error) {
-      console.error('Erro ao criar comentário:', error);
-      setError('Não foi possível criar o comentário. Tente novamente mais tarde.');
+      console.error('Error creating comment:', error);
+      setError('Failed to create comment');
     }
   };
 
@@ -559,54 +577,95 @@ const MemberFeed: React.FC = () => {
 
                     {/* Campo de Comentário */}
                     <CardActions sx={{ p: 2, pt: 0 }}>
-                      <Box display="flex" width="100%" gap={2} alignItems="center">
+                      <Box 
+                        display="flex" 
+                        width="100%" 
+                        gap={2} 
+                        alignItems="flex-start"
+                      >
                         <Avatar
                           src={formatImageUrl(currentUser?.photo)}
                           sx={{ width: 36, height: 36 }}
                         >
                           {currentUser?.name?.[0]}
                         </Avatar>
-                        <TextField
-                          fullWidth
-                          size="small"
-                          placeholder="Escreva um comentário..."
-                          value={selectedPost === post.id ? comment : ''}
-                          onChange={(e) => {
-                            setSelectedPost(post.id);
-                            setComment(e.target.value);
-                          }}
-                          onKeyPress={(e) => {
-                            if (e.key === 'Enter') {
-                              handleCreateComment(post.id);
-                            }
-                          }}
-                          InputProps={{
-                            sx: {
-                              borderRadius: 3,
-                              bgcolor: alpha(theme.palette.primary.main, 0.04),
-                              '&:hover': {
-                                bgcolor: alpha(theme.palette.primary.main, 0.08),
-                              },
-                            },
-                            endAdornment: (
-                              <IconButton size="small">
-                                <EmojiIcon />
-                              </IconButton>
-                            ),
-                          }}
-                        />
-                        <Button
-                          variant="contained"
-                          color="primary"
-                          disabled={!comment.trim() || selectedPost !== post.id}
-                          onClick={() => handleCreateComment(post.id)}
-                          sx={{
-                            borderRadius: 3,
-                            minWidth: 100,
-                          }}
-                        >
-                          Comentar
-                        </Button>
+                        <Box flexGrow={1}>
+                          <Box display="flex" gap={1} alignItems="flex-start">
+                            <TextField
+                              fullWidth
+                              size="small"
+                              placeholder="Escreva um comentário..."
+                              value={commentText[post.id] || ''}
+                              onChange={(e) => handleCommentChange(post.id, e.target.value)}
+                              InputProps={{
+                                sx: {
+                                  bgcolor: alpha(theme.palette.primary.main, 0.04),
+                                  '&:hover': {
+                                    bgcolor: alpha(theme.palette.primary.main, 0.08),
+                                  },
+                                  borderRadius: 2,
+                                },
+                                endAdornment: (
+                                  <IconButton 
+                                    size="small" 
+                                    onClick={() => setShowEmojiPicker(prev => ({
+                                      ...prev,
+                                      [post.id]: !prev[post.id]
+                                    }))}
+                                  >
+                                    <EmojiIcon />
+                                  </IconButton>
+                                )
+                              }}
+                            />
+                            <Button
+                              variant="contained"
+                              size="small"
+                              onClick={() => handleCreateComment(post.id)}
+                              disabled={!commentText[post.id]?.trim()}
+                              sx={{
+                                height: 40,
+                                px: 3,
+                                borderRadius: 2,
+                                textTransform: 'none',
+                                fontWeight: 500,
+                                boxShadow: 'none',
+                                '&:hover': {
+                                  boxShadow: 'none',
+                                  bgcolor: theme.palette.primary.dark,
+                                },
+                              }}
+                            >
+                              Comentar
+                            </Button>
+                          </Box>
+                          
+                          {/* Emoji Picker */}
+                          {showEmojiPicker[post.id] && (
+                            <Box
+                              sx={{
+                                position: 'absolute',
+                                zIndex: 1,
+                                mt: 1
+                              }}
+                            >
+                              <Box
+                                sx={{
+                                  position: 'fixed',
+                                  top: 0,
+                                  right: 0,
+                                  bottom: 0,
+                                  left: 0
+                                }}
+                                onClick={() => setShowEmojiPicker(prev => ({
+                                  ...prev,
+                                  [post.id]: false
+                                }))}
+                              />
+                              <EmojiPicker onEmojiClick={handleEmojiClick(post.id)} />
+                            </Box>
+                          )}
+                        </Box>
                       </Box>
                     </CardActions>
                   </Card>
