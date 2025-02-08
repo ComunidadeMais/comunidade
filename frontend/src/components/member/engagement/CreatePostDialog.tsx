@@ -14,9 +14,11 @@ import {
   IconButton,
   Grid,
   Typography,
+  InputAdornment,
 } from '@mui/material';
-import { PhotoCamera, Close as CloseIcon } from '@mui/icons-material';
+import { PhotoCamera, Close as CloseIcon, EmojiEmotions } from '@mui/icons-material';
 import { Post } from '../../../services/member/engagement';
+import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
 
 interface CreatePostDialogProps {
   open: boolean;
@@ -31,6 +33,7 @@ const CreatePostDialog: React.FC<CreatePostDialogProps> = ({ open, onClose, onSu
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [showEmojiPicker, setShowEmojiPicker] = useState<'title' | 'content' | null>(null);
 
   const handleClose = () => {
     setTitle('');
@@ -38,6 +41,7 @@ const CreatePostDialog: React.FC<CreatePostDialogProps> = ({ open, onClose, onSu
     setType('post');
     setSelectedImages([]);
     setPreviewUrls([]);
+    setShowEmojiPicker(null);
     onClose();
   };
 
@@ -54,6 +58,15 @@ const CreatePostDialog: React.FC<CreatePostDialogProps> = ({ open, onClose, onSu
     setSelectedImages(prev => prev.filter((_, i) => i !== index));
     URL.revokeObjectURL(previewUrls[index]); // Limpar URL do preview
     setPreviewUrls(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleEmojiClick = (field: 'title' | 'content') => (emojiData: EmojiClickData) => {
+    if (field === 'title') {
+      setTitle(prev => prev + emojiData.emoji);
+    } else {
+      setContent(prev => prev + emojiData.emoji);
+    }
+    setShowEmojiPicker(null);
   };
 
   const handleSubmit = () => {
@@ -84,21 +97,67 @@ const CreatePostDialog: React.FC<CreatePostDialogProps> = ({ open, onClose, onSu
             </Select>
           </FormControl>
 
-          <TextField
-            fullWidth
-            label="Título"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-          />
+          <Box position="relative">
+            <TextField
+              fullWidth
+              label="Título"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton onClick={() => setShowEmojiPicker('title')}>
+                      <EmojiEmotions />
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+            />
+            {showEmojiPicker === 'title' && (
+              <Box
+                position="absolute"
+                zIndex={1000}
+                bgcolor="background.paper"
+                boxShadow={3}
+                borderRadius={1}
+                right={0}
+              >
+                <EmojiPicker onEmojiClick={handleEmojiClick('title')} />
+              </Box>
+            )}
+          </Box>
 
-          <TextField
-            fullWidth
-            label="Conteúdo"
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            multiline
-            rows={4}
-          />
+          <Box position="relative">
+            <TextField
+              fullWidth
+              label="Conteúdo"
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              multiline
+              rows={4}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton onClick={() => setShowEmojiPicker('content')}>
+                      <EmojiEmotions />
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+            />
+            {showEmojiPicker === 'content' && (
+              <Box
+                position="absolute"
+                zIndex={1000}
+                bgcolor="background.paper"
+                boxShadow={3}
+                borderRadius={1}
+                right={0}
+              >
+                <EmojiPicker onEmojiClick={handleEmojiClick('content')} />
+              </Box>
+            )}
+          </Box>
 
           <Box>
             <input

@@ -10,10 +10,12 @@ import {
   IconButton,
   Grid,
   Typography,
+  InputAdornment,
 } from '@mui/material';
-import { Close as CloseIcon, Delete as DeleteIcon, PhotoCamera } from '@mui/icons-material';
+import { Close as CloseIcon, Delete as DeleteIcon, PhotoCamera, EmojiEmotions } from '@mui/icons-material';
 import { Post } from '../../../services/member/engagement';
 import { formatImageUrl } from '../../../config/api';
+import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
 
 interface EditPostDialogProps {
   post: Post;
@@ -32,6 +34,7 @@ const EditPostDialog: React.FC<EditPostDialogProps> = ({ post, open, onClose, on
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showEmojiPicker, setShowEmojiPicker] = useState<'title' | 'content' | null>(null);
 
   useEffect(() => {
     if (post) {
@@ -40,6 +43,7 @@ const EditPostDialog: React.FC<EditPostDialogProps> = ({ post, open, onClose, on
       setCurrentImages(post.images || []);
       setNewImages([]);
       setPreviewUrls([]);
+      setShowEmojiPicker(null);
     }
   }, [post]);
 
@@ -60,6 +64,15 @@ const EditPostDialog: React.FC<EditPostDialogProps> = ({ post, open, onClose, on
     setNewImages(prev => prev.filter((_, i) => i !== index));
     URL.revokeObjectURL(previewUrls[index]); // Limpar URL do preview
     setPreviewUrls(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleEmojiClick = (field: 'title' | 'content') => (emojiData: EmojiClickData) => {
+    if (field === 'title') {
+      setTitle(prev => prev + emojiData.emoji);
+    } else {
+      setContent(prev => prev + emojiData.emoji);
+    }
+    setShowEmojiPicker(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -108,128 +121,177 @@ const EditPostDialog: React.FC<EditPostDialogProps> = ({ post, open, onClose, on
 
       <form onSubmit={handleSubmit}>
         <DialogContent>
-          <TextField
-            fullWidth
-            label="Título"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            margin="normal"
-          />
-          <TextField
-            fullWidth
-            label="Conteúdo"
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            margin="normal"
-            multiline
-            rows={4}
-          />
+          <Box display="flex" flexDirection="column" gap={3}>
+            <Box position="relative">
+              <TextField
+                fullWidth
+                label="Título"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton onClick={() => setShowEmojiPicker('title')}>
+                        <EmojiEmotions />
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
+              />
+              {showEmojiPicker === 'title' && (
+                <Box
+                  position="absolute"
+                  zIndex={1000}
+                  bgcolor="background.paper"
+                  boxShadow={3}
+                  borderRadius={1}
+                  right={0}
+                  mt={1}
+                >
+                  <EmojiPicker onEmojiClick={handleEmojiClick('title')} />
+                </Box>
+              )}
+            </Box>
 
-          <Box mt={2}>
-            <input
-              type="file"
-              accept="image/*"
-              multiple
-              style={{ display: 'none' }}
-              ref={fileInputRef}
-              onChange={handleImageSelect}
-            />
-            <Button
-              variant="outlined"
-              startIcon={<PhotoCamera />}
-              onClick={() => fileInputRef.current?.click()}
-            >
-              Adicionar Novas Imagens
-            </Button>
+            <Box position="relative">
+              <TextField
+                fullWidth
+                label="Conteúdo"
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                multiline
+                rows={4}
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton onClick={() => setShowEmojiPicker('content')}>
+                        <EmojiEmotions />
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
+              />
+              {showEmojiPicker === 'content' && (
+                <Box
+                  position="absolute"
+                  zIndex={1000}
+                  bgcolor="background.paper"
+                  boxShadow={3}
+                  borderRadius={1}
+                  right={0}
+                  mt={1}
+                >
+                  <EmojiPicker onEmojiClick={handleEmojiClick('content')} />
+                </Box>
+              )}
+            </Box>
+
+            <Box>
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                style={{ display: 'none' }}
+                ref={fileInputRef}
+                onChange={handleImageSelect}
+              />
+              <Button
+                variant="outlined"
+                startIcon={<PhotoCamera />}
+                onClick={() => fileInputRef.current?.click()}
+              >
+                Adicionar Novas Imagens
+              </Button>
+            </Box>
+
+            {currentImages.length > 0 && (
+              <Box>
+                <Typography variant="subtitle2" gutterBottom>
+                  Imagens Atuais
+                </Typography>
+                <Grid container spacing={1}>
+                  {currentImages.map((image, index) => (
+                    <Grid item xs={4} key={index}>
+                      <Box
+                        sx={{
+                          position: 'relative',
+                          paddingTop: '100%',
+                          '& img': {
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover',
+                            borderRadius: 1,
+                          },
+                        }}
+                      >
+                        <img src={formatImageUrl(image)} alt={`Imagem ${index + 1}`} />
+                        <IconButton
+                          size="small"
+                          sx={{
+                            position: 'absolute',
+                            top: 4,
+                            right: 4,
+                            bgcolor: 'background.paper',
+                            '&:hover': { bgcolor: 'background.paper' },
+                          }}
+                          onClick={() => handleRemoveCurrentImage(index)}
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      </Box>
+                    </Grid>
+                  ))}
+                </Grid>
+              </Box>
+            )}
+
+            {previewUrls.length > 0 && (
+              <Box>
+                <Typography variant="subtitle2" gutterBottom>
+                  Novas Imagens
+                </Typography>
+                <Grid container spacing={1}>
+                  {previewUrls.map((url, index) => (
+                    <Grid item xs={4} key={index}>
+                      <Box
+                        sx={{
+                          position: 'relative',
+                          paddingTop: '100%',
+                          '& img': {
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover',
+                            borderRadius: 1,
+                          },
+                        }}
+                      >
+                        <img src={url} alt={`Nova Imagem ${index + 1}`} />
+                        <IconButton
+                          size="small"
+                          sx={{
+                            position: 'absolute',
+                            top: 4,
+                            right: 4,
+                            bgcolor: 'background.paper',
+                            '&:hover': { bgcolor: 'background.paper' },
+                          }}
+                          onClick={() => handleRemoveNewImage(index)}
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      </Box>
+                    </Grid>
+                  ))}
+                </Grid>
+              </Box>
+            )}
           </Box>
-
-          {currentImages.length > 0 && (
-            <Box mt={2}>
-              <Typography variant="subtitle2" gutterBottom>
-                Imagens Atuais
-              </Typography>
-              <Grid container spacing={1}>
-                {currentImages.map((image, index) => (
-                  <Grid item xs={4} key={index}>
-                    <Box
-                      sx={{
-                        position: 'relative',
-                        paddingTop: '100%',
-                        '& img': {
-                          position: 'absolute',
-                          top: 0,
-                          left: 0,
-                          width: '100%',
-                          height: '100%',
-                          objectFit: 'cover',
-                          borderRadius: 1,
-                        },
-                      }}
-                    >
-                      <img src={formatImageUrl(image)} alt={`Imagem ${index + 1}`} />
-                      <IconButton
-                        size="small"
-                        sx={{
-                          position: 'absolute',
-                          top: 4,
-                          right: 4,
-                          bgcolor: 'background.paper',
-                          '&:hover': { bgcolor: 'background.paper' },
-                        }}
-                        onClick={() => handleRemoveCurrentImage(index)}
-                      >
-                        <DeleteIcon />
-                      </IconButton>
-                    </Box>
-                  </Grid>
-                ))}
-              </Grid>
-            </Box>
-          )}
-
-          {previewUrls.length > 0 && (
-            <Box mt={2}>
-              <Typography variant="subtitle2" gutterBottom>
-                Novas Imagens
-              </Typography>
-              <Grid container spacing={1}>
-                {previewUrls.map((url, index) => (
-                  <Grid item xs={4} key={index}>
-                    <Box
-                      sx={{
-                        position: 'relative',
-                        paddingTop: '100%',
-                        '& img': {
-                          position: 'absolute',
-                          top: 0,
-                          left: 0,
-                          width: '100%',
-                          height: '100%',
-                          objectFit: 'cover',
-                          borderRadius: 1,
-                        },
-                      }}
-                    >
-                      <img src={url} alt={`Nova Imagem ${index + 1}`} />
-                      <IconButton
-                        size="small"
-                        sx={{
-                          position: 'absolute',
-                          top: 4,
-                          right: 4,
-                          bgcolor: 'background.paper',
-                          '&:hover': { bgcolor: 'background.paper' },
-                        }}
-                        onClick={() => handleRemoveNewImage(index)}
-                      >
-                        <DeleteIcon />
-                      </IconButton>
-                    </Box>
-                  </Grid>
-                ))}
-              </Grid>
-            </Box>
-          )}
         </DialogContent>
 
         <DialogActions>
