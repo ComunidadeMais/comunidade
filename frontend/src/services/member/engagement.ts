@@ -115,9 +115,17 @@ class EngagementService {
     return convertApiPostToFrontend(response.data);
   }
 
-  async updatePost(communityId: string, postId: string, data: Partial<Post>) {
-    const response = await api.put(`/communities/${communityId}/engagement/posts/${postId}`, data);
-    return response.data;
+  async updatePost(communityId: string, postId: string, data: Partial<Post> | FormData): Promise<Post> {
+    const response = await api.put(
+      `/communities/${communityId}/engagement/posts/${postId}`,
+      data,
+      {
+        headers: data instanceof FormData ? {
+          'Content-Type': 'multipart/form-data'
+        } : undefined
+      }
+    );
+    return convertApiPostToFrontend(response.data);
   }
 
   async deletePost(communityId: string, postId: string) {

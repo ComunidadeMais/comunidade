@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
@@ -175,22 +176,41 @@ func (h *Handler) GetPost(c *gin.Context) {
 }
 
 type UpdatePostRequest struct {
-	Title   string `json:"title" binding:"required"`
-	Content string `json:"content" binding:"required"`
+	Title          string                  `form:"title" binding:"required"`
+	Content        string                  `form:"content" binding:"required"`
+	Type           string                  `form:"type"`
+	ExistingImages string                  `form:"existing_images"`
+	Images         []*multipart.FileHeader `form:"images"`
 }
 
 func (h *Handler) UpdatePost(c *gin.Context) {
 	communityID := c.Param("communityId")
 	postID := c.Param("postId")
+	memberID := c.GetString("memberId")
+
+	// Debug form data
+	form, err := c.MultipartForm()
+	if err != nil {
+		h.logger.Error("Erro ao obter form data", zap.Error(err))
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to get form data"})
+		return
+	}
+
+	h.logger.Info("Form data recebido",
+		zap.Any("fields", form.Value),
+		zap.Any("file_headers", form.File))
 
 	var req UpdatePostRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
+	if err := c.ShouldBind(&req); err != nil {
+		h.logger.Error("Erro ao fazer bind dos dados", zap.Error(err))
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
+	// Buscar o post existente
 	post, err := h.services.Engagement.GetPost(c.Request.Context(), communityID, postID)
 	if err != nil {
+		h.logger.Error("Erro ao buscar post", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -199,10 +219,85 @@ func (h *Handler) UpdatePost(c *gin.Context) {
 		return
 	}
 
+	// Verificar se o usuário é o autor do post
+	if post.AuthorID != memberID {
+		c.JSON(http.StatusForbidden, gin.H{"error": "not authorized to update this post"})
+		return
+	}
+
+	// Atualizar campos básicos
 	post.Title = req.Title
 	post.Content = req.Content
+	if req.Type != "" {
+		post.Type = req.Type
+	}
 
+	// Processar imagens existentes
+	var existingImages []string
+	if req.ExistingImages != "" {
+		if err := json.Unmarshal([]byte(req.ExistingImages), &existingImages); err != nil {
+			h.logger.Error("Erro ao decodificar existing_images", zap.Error(err))
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid existing_images format"})
+			return
+		}
+	}
+
+	// Remover imagens que não estão mais na lista
+	for _, oldImage := range post.Images {
+		found := false
+		for _, keepImage := range existingImages {
+			if oldImage == keepImage {
+				found = true
+				break
+			}
+		}
+		if !found {
+			// Remover arquivo físico
+			imagePath := filepath.Join("uploads", "posts", oldImage)
+			if err := os.Remove(imagePath); err != nil && !os.IsNotExist(err) {
+				h.logger.Error("Erro ao remover imagem antiga",
+					zap.Error(err),
+					zap.String("path", imagePath))
+			}
+		}
+	}
+
+	// Processar novas imagens
+	var newImages []string
+	if len(req.Images) > 0 {
+		uploadsDir := filepath.Join("uploads", "posts")
+		if err := os.MkdirAll(uploadsDir, 0755); err != nil {
+			h.logger.Error("Erro ao criar diretório", zap.Error(err))
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create uploads directory"})
+			return
+		}
+
+		for _, file := range req.Images {
+			if file.Size == 0 {
+				continue
+			}
+
+			ext := filepath.Ext(file.Filename)
+			fileName := fmt.Sprintf("%s-%s%s", uuid.New().String(), time.Now().Format("20060102150405"), ext)
+			uploadPath := filepath.Join(uploadsDir, fileName)
+
+			if err := c.SaveUploadedFile(file, uploadPath); err != nil {
+				h.logger.Error("Erro ao salvar nova imagem",
+					zap.Error(err),
+					zap.String("path", uploadPath))
+				continue
+			}
+
+			newImages = append(newImages, fileName)
+		}
+	}
+
+	// Atualizar lista de imagens do post
+	post.Images = append(existingImages, newImages...)
+
+	// Salvar alterações
 	if err := h.services.Engagement.UpdatePost(c.Request.Context(), communityID, post); err != nil {
+		h.logger.Error("Erro ao atualizar post", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}

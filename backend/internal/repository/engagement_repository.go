@@ -118,9 +118,32 @@ func (r *engagementRepository) UpdatePost(ctx context.Context, post *domain.Comm
 }
 
 func (r *engagementRepository) DeletePost(ctx context.Context, communityID, postID string) error {
-	return r.GetDB().WithContext(ctx).
-		Where("community_id = ? AND id = ?", communityID, postID).
-		Delete(&domain.CommunityPost{}).Error
+	// Inicia uma transação
+	tx := r.GetDB().WithContext(ctx).Begin()
+	if tx.Error != nil {
+		return tx.Error
+	}
+
+	// Exclui as reações do post
+	if err := tx.Where("post_id = ?", postID).Delete(&domain.PostReaction{}).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	// Exclui os comentários do post
+	if err := tx.Where("post_id = ?", postID).Delete(&domain.PostComment{}).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	// Exclui o post
+	if err := tx.Where("community_id = ? AND id = ?", communityID, postID).Delete(&domain.CommunityPost{}).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	// Commit da transação
+	return tx.Commit().Error
 }
 
 func (r *engagementRepository) FindPostByID(ctx context.Context, communityID, postID string) (*domain.CommunityPost, error) {
