@@ -1,6 +1,8 @@
 import axios from 'axios';
 
-export const API_BASE_URL = 'http://localhost:8080/api/v1';
+const isProduction = import.meta.env.VITE_NODE_ENV === 'production';
+export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api/v1';
+export const UPLOADS_BASE_URL = import.meta.env.VITE_UPLOADS_URL || 'http://localhost:8080/uploads';
 
 const publicRoutes = [
   '/events/*/public',
@@ -18,7 +20,7 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json'
   },
-  timeout: 10000,
+  timeout: isProduction ? 30000 : 10000, // Timeout maior em produção
   validateStatus: (status) => {
     return status >= 200 && status < 500;
   }

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   Container,
   Typography,
@@ -67,41 +67,91 @@ const MemberFeed: React.FC = () => {
   const [postToEdit, setPostToEdit] = useState<Post | null>(null);
   const [showEmojiPicker, setShowEmojiPicker] = useState<{ [key: string]: boolean }>({});
   const [commentText, setCommentText] = useState<{ [key: string]: string }>({});
+  const [isMounted, setIsMounted] = useState(false);
 
-  const loadPosts = async () => {
+  const loadPosts = useCallback(async () => {
+    // Se o componente não estiver montado, não faz a requisição
+    if (!isMounted) return;
+
     try {
       if (!currentCommunity?.id) {
         throw new Error('ID da comunidade não encontrado');
       }
 
       const response = await engagementService.listPosts(currentCommunity.id);
-      setPosts(response.posts || []);
-      setError(null); // Limpa qualquer erro anterior em caso de sucesso
+      // Só atualiza o estado se o componente ainda estiver montado
+      if (isMounted) {
+        setPosts(response.posts || []);
+        setError(null);
+      }
     } catch (error) {
-      console.error('Erro ao carregar posts:', error);
-      setError('Não foi possível carregar as publicações. Tente novamente mais tarde.');
+      // Só atualiza o estado se o componente ainda estiver montado
+      if (isMounted) {
+        console.error('Erro ao carregar posts:', error);
+        setError('Não foi possível carregar as publicações. Tente novamente mais tarde.');
+      }
     } finally {
-      setLoading(false);
+      // Só atualiza o estado se o componente ainda estiver montado
+      if (isMounted) {
+        setLoading(false);
+      }
     }
-  };
+  }, [currentCommunity?.id, isMounted]);
 
-  // Carregamento inicial dos posts
-  useEffect(() => {
-    loadPosts();
-  }, [currentCommunity?.id]);
-
-  // Configuração do polling automático
+  // Configuração do polling automático com controle de visibilidade
   const { startPolling, stopPolling } = usePolling(loadPosts, {
-    interval: 30000, // 30 segundos
-    enabled: true,   // Sempre ativado
+    interval: 60000, // 1 minuto
+    enabled: false, // Começa desativado
     backoffFactor: 2,
     maxBackoff: 300000 // 5 minutos
   });
 
   useEffect(() => {
-    startPolling(); // Inicia o polling automaticamente
-    return () => stopPolling(); // Limpa ao desmontar o componente
-  }, [startPolling, stopPolling]);
+    setIsMounted(true);
+    return () => {
+      setIsMounted(false);
+      stopPolling(); // Garante que o polling pare quando o componente for desmontado
+    };
+  }, [stopPolling]);
+
+  // Carregamento inicial dos posts
+  useEffect(() => {
+    if (isMounted && currentCommunity?.id) {
+      loadPosts();
+    }
+  }, [currentCommunity?.id, isMounted]);
+
+  // Controle do polling baseado na visibilidade da página
+  useEffect(() => {
+    if (!isMounted) return;
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        console.log('Feed: Página oculta, parando polling');
+        stopPolling();
+      } else {
+        console.log('Feed: Página visível, carregando posts e iniciando polling');
+        loadPosts();
+        startPolling();
+      }
+    };
+
+    // Inicia o polling apenas se a página estiver visível
+    if (!document.hidden) {
+      console.log('Feed: Iniciando polling (página visível)');
+      startPolling();
+    }
+
+    // Adiciona listener para mudanças de visibilidade
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    // Cleanup quando o componente desmonta
+    return () => {
+      console.log('Feed: Limpando polling e listeners');
+      stopPolling();
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [startPolling, stopPolling, isMounted]);
 
   const handleCreatePost = async (data: Partial<Post> & { imageFiles?: File[] }) => {
     try {
