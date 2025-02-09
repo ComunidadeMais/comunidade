@@ -162,7 +162,7 @@ const Home: React.FC = () => {
                       variant="contained" 
                       color="secondary"
                       size="large"
-                      onClick={() => navigate('/register')}
+                      onClick={() => navigate('/demonstracao')}
                       sx={{ 
                         py: 2,
                         px: 4,
@@ -177,7 +177,7 @@ const Home: React.FC = () => {
                       variant="outlined" 
                       color="inherit"
                       size="large"
-                      onClick={() => navigate('/contact')}
+                      onClick={() => navigate('/demonstracao')}
                       sx={{ 
                         py: 2,
                         px: 4,
@@ -1022,7 +1022,7 @@ const Home: React.FC = () => {
                 variant="contained" 
                 color="secondary"
                 size="large"
-                onClick={() => navigate('/register')}
+                onClick={() => navigate('/demonstracao')}
                 sx={{ 
                   py: 2,
                   px: 6,
@@ -1037,7 +1037,7 @@ const Home: React.FC = () => {
                 variant="outlined" 
                 color="inherit"
                 size="large"
-                onClick={() => navigate('/contact')}
+                onClick={() => navigate('/demonstracao')}
                 sx={{ 
                   py: 2,
                   px: 6,

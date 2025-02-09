@@ -499,7 +499,7 @@ const PublicNavbar: FC = () => {
                 <Button 
                   variant="contained" 
                   color="secondary"
-                  onClick={() => navigate('/register')}
+                  onClick={() => navigate('/demonstracao')}
                   sx={{ 
                     py: 1,
                     px: 3,
@@ -576,7 +576,7 @@ const PublicNavbar: FC = () => {
               color="secondary"
               fullWidth
               size="large"
-              onClick={() => handleMenuClick('/register')}
+              onClick={() => handleMenuClick('/demonstracao')}
               sx={{ 
                 py: 1.5,
                 borderRadius: 2,

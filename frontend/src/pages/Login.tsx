@@ -290,7 +290,7 @@ const Login: FC = () => {
                   Esqueceu sua senha?
                 </Link>
 
-                <Link
+                {/* <Link
                   component="button"
                   variant="body2"
                   onClick={() => navigate('/register')}
@@ -305,7 +305,7 @@ const Login: FC = () => {
                   }}
                 >
                   Criar uma conta
-                </Link>
+                </Link> */}
               </Box>
             </Box>
           </Paper>

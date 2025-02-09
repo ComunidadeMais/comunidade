@@ -53,6 +53,8 @@ import MemberDashboard from './pages/member/MemberDashboard';
 import MemberLogin from './pages/member/MemberLogin';
 import { AuthProvider } from './contexts/AuthContext';
 import { AppRoutes } from './routes';
+import LeadForm from './pages/LeadForm';
+import ThankYou from './pages/ThankYou';
 
 // Componente para proteger rotas
 const PrivateRoute: FC<{ element: React.ReactElement }> = ({ element }) => {
@@ -98,6 +100,8 @@ const App: FC = () => {
                   <Route path="/" element={<Home />} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/register" element={<Register />} />
+                  <Route path="/demonstracao" element={<LeadForm />} />
+                  <Route path="/obrigado" element={<ThankYou />} />
                   <Route path="/forgot-password" element={<ForgotPassword />} />
                   <Route path="/events/:eventId/view" element={<EventView />} />
                   <Route path="/events/:eventId/checkin" element={<CheckIn />} />

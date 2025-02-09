@@ -22,7 +22,7 @@ const Home: React.FC = () => {
                 variant="contained" 
                 size="large" 
                 sx={{ mt: 2 }}
-                onClick={() => navigate('/register')}
+                onClick={() => navigate('/demonstracao')}
               >
                 Comece Agora
               </Button>

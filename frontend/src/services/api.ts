@@ -13,6 +13,7 @@ const publicRoutes = [
   '/events/*/public',
   '/login',
   '/register',
+  '/demonstracao',
   '/forgot-password',
   '/communities/*/public',
   '/communities/*/members/login',
