@@ -31,6 +31,7 @@ import {
 import { CommunityService } from '../../services/community';
 import { Community } from '../../types/community';
 import { formatCommunityType, formatCommunityStatus, getCommunityTypeColor, getCommunityStatusColor } from '../../utils/formatters';
+import { getImageUrl } from '../../utils/imageUrl';
 
 const Communities: React.FC = () => {
   const [communities, setCommunities] = useState<Community[]>([]);
@@ -426,7 +427,7 @@ const Communities: React.FC = () => {
                       >
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                           <Avatar
-                            src={community.logo ? `http://localhost:8080/uploads/${community.logo}` : undefined}
+                            src={getImageUrl(community.logo)}
                             alt={community.name}
                             sx={{ width: 40, height: 40 }}
                           >
@@ -480,7 +481,7 @@ const Communities: React.FC = () => {
                     <Grid item xs={12} sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
                       <Box sx={{ position: 'relative' }}>
                         <Avatar
-                          src={formData.logo ? `http://localhost:8080/uploads/${formData.logo}` : undefined}
+                          src={getImageUrl(formData.logo)}
                           alt={formData.name}
                           sx={{ 
                             width: 120, 
@@ -524,7 +525,7 @@ const Communities: React.FC = () => {
                         {formData.banner ? (
                           <Box
                             component="img"
-                            src={`http://localhost:8080/uploads/${formData.banner}`}
+                            src={getImageUrl(formData.banner)}
                             alt="Banner"
                             sx={{
                               width: '100%',

@@ -33,6 +33,7 @@ import { uploadImage } from '../../services/upload';
 import { User } from '../../types/user';
 import { API_BASE_URL } from '../../services/api';
 import { useUsers } from '../../contexts/UsersContext';
+import { getImageUrl } from '../../utils/imageUrl';
 
 interface LocationState {
   defaultStartDate?: string;
@@ -83,9 +84,8 @@ export function EventForm() {
 
     // Tenta obter a URL do banner da comunidade
     const bannerPath = activeCommunity?.banner_url || activeCommunity?.banner || '';
-    const bannerUrl = bannerPath ? `http://localhost:8080/uploads/${bannerPath}` : '';
-
-    const imageUrl = formData.image_url ? `http://localhost:8080/uploads/${formData.image_url}` : '';
+    const bannerUrl = getImageUrl(bannerPath);
+    const imageUrl = getImageUrl(formData.image_url);
 
     const replacements = {
       '[LOGO_URL]': bannerUrl,

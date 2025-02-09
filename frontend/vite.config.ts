@@ -17,10 +17,20 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
-          vendor: ['react', 'react-dom', 'react-router-dom'],
-          mui: ['@mui/material', '@mui/icons-material', '@emotion/react', '@emotion/styled'],
-        },
-      },
+          vendor: [
+            'react',
+            'react-dom',
+            'react-router-dom',
+            '@emotion/react',
+            '@emotion/styled',
+            'axios'
+          ],
+          mui: [
+            '@mui/material',
+            '@mui/icons-material'
+          ]
+        }
+      }
     },
   },
   server: {
@@ -31,6 +41,11 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
       },
+      '/uploads': {
+        target: process.env.VITE_UPLOADS_URL || 'http://localhost:8080',
+        changeOrigin: true,
+        secure: false,
+      }
     },
   },
 })

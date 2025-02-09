@@ -50,6 +50,7 @@ import { useCommunity } from '../../contexts/CommunityContext';
 import { useUsers } from '../../contexts/UsersContext';
 import dayjs from 'dayjs';
 import 'dayjs/locale/pt-br';
+import { getImageUrl } from '../../utils/imageUrl';
 
 export function Events() {
   const navigate = useNavigate();
@@ -402,7 +403,7 @@ export function Events() {
                           <TableCell>
                             {event.image_url ? (
                               <Avatar
-                                src={`http://localhost:8080/uploads/${event.image_url}`}
+                                src={getImageUrl(event.image_url)}
                                 alt={event.title}
                                 variant="rounded"
                                 sx={{ width: 56, height: 56 }}

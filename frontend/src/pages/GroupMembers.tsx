@@ -42,6 +42,7 @@ import { GroupService } from '../services/group';
 import { MemberService } from '../services/member';
 import { Member } from '../types/member';
 import { useCommunity } from '../contexts/CommunityContext';
+import { getImageUrl } from '../utils/imageUrl';
 
 const GroupMembers = () => {
   const navigate = useNavigate();
@@ -250,7 +251,7 @@ const GroupMembers = () => {
                       <TableRow key={member.id}>
                         <TableCell>
                           <Avatar 
-                            src={member.photo ? `http://localhost:8080/uploads/${member.photo}` : undefined}
+                            src={getImageUrl(member.photo)}
                             alt={member.name}
                           >
                             {!member.photo && member.name.charAt(0)}
@@ -352,7 +353,7 @@ const GroupMembers = () => {
                       >
                         <TableCell>
                           <Avatar
-                            src={member.photo ? `http://localhost:8080/uploads/${member.photo}` : undefined}
+                            src={getImageUrl(member.photo)}
                             sx={{ width: 40, height: 40 }}
                           >
                             {!member.photo && member.name.charAt(0)}

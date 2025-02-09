@@ -43,6 +43,7 @@ import { MemberService } from '../services/member';
 import { useCommunity } from '../contexts/CommunityContext';
 import { Member } from '../types/member';
 import { Family, FamilyMember, FamilyRoles, FamilyRoleValues } from '../types/family';
+import { getImageUrl } from '../utils/imageUrl';
 
 const FamilyMembers = () => {
   const navigate = useNavigate();
@@ -398,7 +399,7 @@ const FamilyMembers = () => {
                     >
                       <TableCell>
                         <Avatar
-                          src={member.photo ? `http://localhost:8080/uploads/${member.photo}` : undefined}
+                          src={getImageUrl(member.photo)}
                           sx={{ width: 40, height: 40 }}
                         >
                           {!member.photo && member.name.charAt(0)}
