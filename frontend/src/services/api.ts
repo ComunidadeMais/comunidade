@@ -1,8 +1,13 @@
 import axios from 'axios';
 
 const isProduction = import.meta.env.VITE_NODE_ENV === 'production';
-export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api/v1';
-export const UPLOADS_BASE_URL = import.meta.env.VITE_UPLOADS_URL || 'http://localhost:8080/uploads';
+export const API_BASE_URL = isProduction 
+  ? 'https://comunidade-backend.fly.dev/api/v1'
+  : 'http://localhost:8080/api/v1';
+
+export const UPLOADS_BASE_URL = isProduction
+  ? 'https://comunidade-backend.fly.dev/uploads'
+  : 'http://localhost:8080/uploads';
 
 const publicRoutes = [
   '/events/*/public',
