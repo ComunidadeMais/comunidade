@@ -1,0 +1,28 @@
+server:
+  port: 8080
+  timeout: 30
+
+database:
+  host: ${DATABASE_HOST}
+  port: ${DATABASE_PORT}
+  user: ${DATABASE_USER}
+  password: ${DATABASE_PASSWORD}
+  name: ${DATABASE_NAME}
+  sslmode: require
+  timezone: UTC
+
+jwt:
+  secret: ${JWT_SECRET}
+  expiration: 24h
+  refresh_expiration: 168h
+
+storage:
+  uploads_dir: /root/uploads
+
+email:
+  smtp_host: ${SMTP_HOST}
+  smtp_port: ${SMTP_PORT}
+  smtp_user: ${SMTP_USER}
+  smtp_password: ${SMTP_PASSWORD}
+  from_name: Comunidade
+  from_email: ${FROM_EMAIL} 

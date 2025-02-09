@@ -11,10 +11,13 @@ type Config struct {
 	Server   ServerConfig
 	Database DatabaseConfig
 	JWT      JWTConfig
+	Storage  StorageConfig
+	Email    EmailConfig
 }
 
 type ServerConfig struct {
-	Port int
+	Port    int
+	Timeout int
 }
 
 type DatabaseConfig struct {
@@ -24,32 +27,61 @@ type DatabaseConfig struct {
 	Password string
 	Name     string
 	SSLMode  string
+	Timezone string
 }
 
 type JWTConfig struct {
-	Secret string
+	Secret            string
+	Expiration        string
+	RefreshExpiration string
+}
+
+type StorageConfig struct {
+	UploadsDir string
+}
+
+type EmailConfig struct {
+	SMTPHost     string
+	SMTPPort     int
+	SMTPUser     string
+	SMTPPassword string
+	FromName     string
+	FromEmail    string
 }
 
 func Load() (*Config, error) {
-	// Carrega o arquivo .env
-	if err := godotenv.Load(); err != nil {
-		return nil, err
-	}
+	// Tenta carregar o arquivo .env, mas não retorna erro se não existir
+	godotenv.Load()
 
 	return &Config{
 		Server: ServerConfig{
-			Port: getEnvAsInt("PORT", 8080),
+			Port:    getEnvAsInt("PORT", 8080),
+			Timeout: getEnvAsInt("SERVER_TIMEOUT", 30),
 		},
 		Database: DatabaseConfig{
-			Host:     getEnv("DB_HOST", "localhost"),
-			Port:     getEnvAsInt("DB_PORT", 5432),
-			User:     getEnv("DB_USER", "postgres"),
-			Password: getEnv("DB_PASSWORD", "postgres"),
-			Name:     getEnv("DB_NAME", "comunidade"),
-			SSLMode:  getEnv("DB_SSLMODE", "disable"),
+			Host:     getEnv("DATABASE_HOST", "localhost"),
+			Port:     getEnvAsInt("DATABASE_PORT", 5432),
+			User:     getEnv("DATABASE_USER", "postgres"),
+			Password: getEnv("DATABASE_PASSWORD", "postgres"),
+			Name:     getEnv("DATABASE_NAME", "comunidade"),
+			SSLMode:  getEnv("DATABASE_SSLMODE", "disable"),
+			Timezone: getEnv("DATABASE_TIMEZONE", "UTC"),
 		},
 		JWT: JWTConfig{
-			Secret: getEnv("JWT_SECRET", "your-secret-key"),
+			Secret:            getEnv("JWT_SECRET", "your-secret-key"),
+			Expiration:        getEnv("JWT_EXPIRATION", "24h"),
+			RefreshExpiration: getEnv("JWT_REFRESH_EXPIRATION", "168h"),
+		},
+		Storage: StorageConfig{
+			UploadsDir: getEnv("UPLOADS_DIR", "/root/uploads"),
+		},
+		Email: EmailConfig{
+			SMTPHost:     getEnv("SMTP_HOST", "smtp.gmail.com"),
+			SMTPPort:     getEnvAsInt("SMTP_PORT", 587),
+			SMTPUser:     getEnv("SMTP_USER", ""),
+			SMTPPassword: getEnv("SMTP_PASSWORD", ""),
+			FromName:     getEnv("FROM_NAME", "Comunidade"),
+			FromEmail:    getEnv("FROM_EMAIL", ""),
 		},
 	}, nil
 }

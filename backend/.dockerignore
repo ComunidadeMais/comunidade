@@ -1,0 +1,10 @@
+.git
+.gitignore
+.env
+*.md
+/uploads/*
+/tmp
+/data
+.DS_Store
+.idea
+.vscode 
