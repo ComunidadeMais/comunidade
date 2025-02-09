@@ -1,0 +1,20 @@
+User-agent: *
+Allow: /
+Allow: /events
+Allow: /groups
+Allow: /about
+Allow: /contact
+Disallow: /admin/
+Disallow: /member/login
+Disallow: /member/profile
+Disallow: /member/dashboard
+Disallow: /settings
+Disallow: /api/
+
+# Permitir indexação de conteúdo público
+Allow: /blog/
+Allow: /eventos-publicos/
+Allow: /grupos-publicos/
+
+# Sitemap
+Sitemap: https://comunidademais.app/sitemap.xml 
