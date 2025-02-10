@@ -55,6 +55,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import { AppRoutes } from './routes';
 import LeadForm from './pages/LeadForm';
 import ThankYou from './pages/ThankYou';
+import { Analytics } from '@vercel/analytics/react';
 
 // Componente para proteger rotas
 const PrivateRoute: FC<{ element: React.ReactElement }> = ({ element }) => {
@@ -168,6 +169,7 @@ const App: FC = () => {
               </CommunityProvider>
             </AuthProvider>
           </Router>
+          <Analytics />
         </ThemeProvider>
       </QueryClientProvider>
     </HelmetProvider>
