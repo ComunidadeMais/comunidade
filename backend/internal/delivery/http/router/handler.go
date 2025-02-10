@@ -11,6 +11,9 @@ type RouteHandler interface {
 	GetLogger() *zap.Logger
 	GetRepos() *repository.Repositories
 
+	// Contact Form
+	HandleContactForm(c *gin.Context)
+
 	// Auth
 	Register(c *gin.Context)
 	Login(c *gin.Context)

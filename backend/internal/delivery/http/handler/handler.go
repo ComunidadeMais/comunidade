@@ -3,9 +3,12 @@ package handler
 import (
 	"context"
 	"errors"
+	"fmt"
+	"os"
 
 	"github.com/comunidade/backend/internal/delivery/http/middleware"
 	"github.com/comunidade/backend/internal/delivery/http/router"
+	"github.com/comunidade/backend/internal/domain"
 	"github.com/comunidade/backend/internal/repository"
 	"github.com/comunidade/backend/internal/service"
 	"github.com/gin-gonic/gin"
@@ -68,6 +71,72 @@ func (h *Handler) GetLogger() *zap.Logger {
 
 func (h *Handler) GetRepos() *repository.Repositories {
 	return h.repos
+}
+
+func (h *Handler) HandleContactForm(c *gin.Context) {
+	h.logger.Info("Iniciando processamento do formulário de contato")
+
+	var req struct {
+		Name    string `json:"name" binding:"required"`
+		Email   string `json:"email" binding:"required,email"`
+		Subject string `json:"subject" binding:"required"`
+		Message string `json:"message" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		h.logger.Error("Dados inválidos no formulário", zap.Error(err))
+		c.JSON(400, gin.H{"error": "Dados inválidos no formulário"})
+		return
+	}
+
+	h.logger.Info("Dados do formulário recebidos",
+		zap.String("name", req.Name),
+		zap.String("email", req.Email),
+		zap.String("subject", req.Subject))
+
+	emailContent := fmt.Sprintf(`
+		<h2>Nova Mensagem do Formulário de Contato</h2>
+		<p><strong>Nome:</strong> %s</p>
+		<p><strong>Email:</strong> %s</p>
+		<p><strong>Assunto:</strong> %s</p>
+		<p><strong>Mensagem:</strong></p>
+		<p>%s</p>
+	`, req.Name, req.Email, req.Subject, req.Message)
+
+	toEmail := os.Getenv("FROM_EMAIL")
+	h.logger.Info("Email de destino configurado", zap.String("toEmail", toEmail))
+
+	// Criar uma comunicação para envio do email
+	communication := &domain.Communication{
+		Subject:       "Novo Contato: " + req.Subject,
+		Content:       emailContent,
+		RecipientType: "email",
+		RecipientID:   toEmail,
+	}
+
+	h.logger.Info("Criando comunicação",
+		zap.String("subject", communication.Subject),
+		zap.String("recipientType", string(communication.RecipientType)),
+		zap.String("recipientId", communication.RecipientID))
+
+	if err := h.services.Communication.CreateCommunication(c, "", communication); err != nil {
+		h.logger.Error("Erro ao criar comunicação",
+			zap.Error(err),
+			zap.Any("communication", communication))
+		c.JSON(500, gin.H{"error": "Erro ao enviar mensagem"})
+		return
+	}
+
+	h.logger.Info("Enviando comunicação", zap.String("id", communication.ID))
+
+	if err := h.services.Communication.SendCommunication(c, "", communication.ID); err != nil {
+		h.logger.Error("Erro ao enviar email de contato", zap.Error(err))
+		c.JSON(500, gin.H{"error": "Erro ao enviar mensagem"})
+		return
+	}
+
+	h.logger.Info("Mensagem enviada com sucesso")
+	c.JSON(200, gin.H{"message": "Mensagem enviada com sucesso"})
 }
 
 type RouteHandler interface {

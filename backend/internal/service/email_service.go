@@ -1,6 +1,7 @@
 package service
 
 import (
+	"crypto/tls"
 	"fmt"
 	"net/smtp"
 	"os"
@@ -37,13 +38,17 @@ func NewEmailService(logger *zap.Logger) *EmailService {
 		port:      os.Getenv("SMTP_PORT"),
 		user:      os.Getenv("SMTP_USER"),
 		pass:      os.Getenv("SMTP_PASSWORD"),
-		fromEmail: os.Getenv("SMTP_FROM_EMAIL"),
-		fromName:  os.Getenv("SMTP_FROM_NAME"),
+		fromEmail: os.Getenv("FROM_EMAIL"),
+		fromName:  os.Getenv("FROM_NAME"),
 	}
 
 	// Validar configurações
 	if config.host == "" || config.port == "" || config.user == "" || config.pass == "" || config.fromEmail == "" {
-		logger.Error("configurações de SMTP incompletas")
+		logger.Error("configurações de SMTP incompletas",
+			zap.String("host", config.host),
+			zap.String("port", config.port),
+			zap.String("user", config.user),
+			zap.String("fromEmail", config.fromEmail))
 	}
 
 	return &EmailService{
@@ -100,6 +105,11 @@ func (s *EmailService) SendEmail(to, subject, body string) error {
 }
 
 func (s *EmailService) sendEmail(job emailJob) error {
+	s.logger.Info("Preparando para enviar email",
+		zap.String("to", job.to),
+		zap.String("subject", job.subject),
+		zap.String("body", job.body))
+
 	// Montar o email
 	mime := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n"
 	from := fmt.Sprintf("From: %s <%s>\n", s.smtpConfig.fromName, s.smtpConfig.fromEmail)
@@ -107,24 +117,68 @@ func (s *EmailService) sendEmail(job emailJob) error {
 	subject := fmt.Sprintf("Subject: %s\n", job.subject)
 	msg := []byte(from + to + subject + mime + "\n" + job.body)
 
-	// Configurar autenticação
-	auth := smtp.PlainAuth("", s.smtpConfig.user, s.smtpConfig.pass, s.smtpConfig.host)
+	s.logger.Info("Configurações SMTP",
+		zap.String("host", s.smtpConfig.host),
+		zap.String("port", s.smtpConfig.port),
+		zap.String("user", s.smtpConfig.user),
+		zap.String("from_name", s.smtpConfig.fromName),
+		zap.String("from_email", s.smtpConfig.fromEmail))
 
-	// Enviar email
+	// Configurar conexão TLS
+	tlsConfig := &tls.Config{
+		ServerName: s.smtpConfig.host,
+	}
+
+	// Conectar ao servidor SMTP com TLS
 	addr := fmt.Sprintf("%s:%s", s.smtpConfig.host, s.smtpConfig.port)
-	if err := smtp.SendMail(addr, auth, s.smtpConfig.fromEmail, []string{job.to}, msg); err != nil {
-		s.logger.Error("erro ao enviar email",
-			zap.Error(err),
-			zap.String("to", job.to),
-			zap.String("subject", job.subject),
-		)
-		return fmt.Errorf("erro ao enviar email: %v", err)
+	s.logger.Info("Tentando conectar com TLS", zap.String("addr", addr))
+
+	conn, err := tls.Dial("tcp", addr, tlsConfig)
+	if err != nil {
+		s.logger.Error("erro ao conectar com TLS", zap.Error(err))
+		return fmt.Errorf("erro ao conectar com TLS: %v", err)
+	}
+	defer conn.Close()
+
+	client, err := smtp.NewClient(conn, s.smtpConfig.host)
+	if err != nil {
+		s.logger.Error("erro ao criar cliente SMTP", zap.Error(err))
+		return fmt.Errorf("erro ao criar cliente SMTP: %v", err)
+	}
+	defer client.Close()
+
+	// Autenticar
+	auth := smtp.PlainAuth("", s.smtpConfig.user, s.smtpConfig.pass, s.smtpConfig.host)
+	if err := client.Auth(auth); err != nil {
+		s.logger.Error("erro na autenticação", zap.Error(err))
+		return fmt.Errorf("erro na autenticação: %v", err)
+	}
+
+	// Definir remetente e destinatário
+	if err := client.Mail(s.smtpConfig.fromEmail); err != nil {
+		return fmt.Errorf("erro ao definir remetente: %v", err)
+	}
+	if err := client.Rcpt(job.to); err != nil {
+		return fmt.Errorf("erro ao definir destinatário: %v", err)
+	}
+
+	// Enviar a mensagem
+	w, err := client.Data()
+	if err != nil {
+		return fmt.Errorf("erro ao iniciar envio de dados: %v", err)
+	}
+	_, err = w.Write(msg)
+	if err != nil {
+		return fmt.Errorf("erro ao enviar dados: %v", err)
+	}
+	err = w.Close()
+	if err != nil {
+		return fmt.Errorf("erro ao finalizar envio: %v", err)
 	}
 
 	s.logger.Info("email enviado com sucesso",
 		zap.String("to", job.to),
-		zap.String("subject", job.subject),
-	)
+		zap.String("subject", job.subject))
 
 	return nil
 }

@@ -93,6 +93,8 @@ func (s *communicationService) DeleteCommunication(ctx context.Context, communit
 }
 
 func (s *communicationService) SendCommunication(ctx context.Context, communityID, communicationID string) error {
+	s.logger.Info("Iniciando envio de comunicação", zap.String("id", communicationID))
+
 	// Busca a comunicação
 	communication, err := s.repos.Communication.FindByID(ctx, communityID, communicationID)
 	if err != nil {
@@ -102,7 +104,26 @@ func (s *communicationService) SendCommunication(ctx context.Context, communityI
 		return fmt.Errorf("comunicação não encontrada")
 	}
 
-	// Busca os destinatários
+	// Se for do tipo email, envia diretamente
+	if communication.RecipientType == "email" {
+		job := emailJob{
+			to:      communication.RecipientID,
+			subject: communication.Subject,
+			body:    communication.Content,
+		}
+
+		if err := s.emailService.SendEmail(job.to, job.subject, job.body); err != nil {
+			s.logger.Error("erro ao enviar email",
+				zap.Error(err),
+				zap.String("to", job.to),
+				zap.String("subject", job.subject))
+			return fmt.Errorf("erro ao enviar email: %v", err)
+		}
+
+		return nil
+	}
+
+	// Para outros tipos de comunicação...
 	recipients, err := s.getRecipients(ctx, communityID, communication)
 	if err != nil {
 		return fmt.Errorf("erro ao buscar destinatários: %v", err)
@@ -128,7 +149,7 @@ func (s *communicationService) SendCommunication(ctx context.Context, communityI
 			zap.Error(err),
 			zap.String("communicationId", communicationID),
 		)
-		// Mesmo com erro, vamos continuar para atualizar o status
+		return fmt.Errorf("erro ao enviar emails: %v", err)
 	}
 
 	// Atualiza o status da comunicação

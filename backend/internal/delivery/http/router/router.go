@@ -29,6 +29,7 @@ func InitRoutes(r *gin.Engine, h RouteHandler, authMiddleware gin.HandlerFunc) {
 		InitPublicEventRoutes(public, h)
 		InitPublicCheckInRoutes(public, h)
 		InitPublicCommunityRoutes(public, h)
+		public.POST("/contact", h.HandleContactForm)
 	}
 
 	// Rotas protegidas (com autenticação administrativa)
