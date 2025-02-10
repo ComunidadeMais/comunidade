@@ -1,47 +1,47 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://comunidademais.app/</loc>
+    <loc>https://comunidademais.com/</loc>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://comunidademais.app/eventos-publicos</loc>
+    <loc>https://comunidademais.com/eventos-publicos</loc>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://comunidademais.app/grupos-publicos</loc>
+    <loc>https://comunidademais.com/grupos-publicos</loc>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://comunidademais.app/blog</loc>
+    <loc>https://comunidademais.com/blog</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://comunidademais.app/recursos</loc>
+    <loc>https://comunidademais.com/recursos</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://comunidademais.app/planos</loc>
+    <loc>https://comunidademais.com/planos</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://comunidademais.app/sobre</loc>
+    <loc>https://comunidademais.com/sobre</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://comunidademais.app/contato</loc>
+    <loc>https://comunidademais.com/contato</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://comunidademais.app/ajuda</loc>
+    <loc>https://comunidademais.com/ajuda</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>

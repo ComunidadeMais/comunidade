@@ -17,4 +17,4 @@ Allow: /eventos-publicos/
 Allow: /grupos-publicos/
 
 # Sitemap
-Sitemap: https://comunidademais.app/sitemap.xml 
+Sitemap: https://comunidademais.com/sitemap.xml 
