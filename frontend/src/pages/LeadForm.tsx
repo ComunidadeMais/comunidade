@@ -178,7 +178,7 @@ const LeadForm: React.FC = () => {
                     mb: 1
                   }}
                 >
-                  Solicite uma Demonstração
+                  Cadastre-se para acessar o Comunidade+
                 </Typography>
                 <Typography 
                   variant="body1" 
@@ -190,7 +190,7 @@ const LeadForm: React.FC = () => {
                     lineHeight: 1.5
                   }}
                 >
-                  Preencha os dados abaixo para conhecer o ComunidadeMais
+                  Preencha os dados abaixo para conhecer o Comunidade+
                 </Typography>
               </Box>
 
@@ -485,7 +485,7 @@ const LeadForm: React.FC = () => {
                   }
                 }}
               >
-                {loading ? <CircularProgress size={24} /> : 'Solicitar Demonstração'}
+                {loading ? <CircularProgress size={24} /> : 'Cadastrar'}
               </Button>
             </Box>
           </Paper>
